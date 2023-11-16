@@ -3,6 +3,7 @@ name = "micromed-io"
 version = "0.2.0"
 description = "A library to handle Micromed data"
 authors = ["Etienne de MONTALIVET <etienne.demontalivet@protonmail.com>"]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
