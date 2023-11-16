@@ -17,6 +17,17 @@ mne_raw = create_mne_from_micromed_recording("path/to/file.TRC")
 
 ## Emulate Micromed TCP from *.trc* file
 
+### CLI tool
+
+Use the following command:
+
+``` bash
+mmio_tcp_emulator --file=../data/sample.TRC --address=localhost --port=5123
+mmio_tcp_emulator --help
+```
+
+### From python script
+
 Download `emulate_trc_tcpip.py` from the [gihub repo](https://github.com/etiennedemontalivet/micromed-io) in *scripts/*
 
 ``` bash
