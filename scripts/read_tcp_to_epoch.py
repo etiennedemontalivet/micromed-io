@@ -99,7 +99,7 @@ if __name__ == "__main__":
                     if not micromed_buffer.decode_data_eeg_packet(b_data):
                         logging.error("Error in EEG data packet")
                     if micromed_buffer.update_epoch_buffer():
-                        logging.info("Buffer full:")
+                        logging.info("Buffer full: PROCESS HERE")
                         print(micromed_buffer.current_epoch.shape)
                         print(micromed_buffer.current_epoch)
 
