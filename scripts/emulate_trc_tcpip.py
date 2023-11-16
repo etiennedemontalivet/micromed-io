@@ -7,70 +7,63 @@ HOW TO USE:
 > python emulate_trc_tcpip.py --help
 > python emulate_trc_tcpip.py --file=../data/sample.TRC
 """
-import argparse
 import socket
 import time
 import logging
 from pathlib import Path
+import click
 
 from micromed_io.in_out import MicromedIO
 
 
-if __name__ == "__main__":
+@click.command(context_settings=dict(max_content_width=120))
+@click.option("--file", "-f", type=str, required=True, help="the TRC file to emulate")
+@click.option(
+    "--address",
+    "-a",
+    default="localhost",
+    type=str,
+    required=False,
+    help="the TCP address to connect to",
+    show_default=True,
+)
+@click.option(
+    "--port",
+    "-p",
+    default=5123,
+    type=int,
+    required=False,
+    help="The TCP port number to connect to",
+    show_default=True,
+)
+@click.option(
+    "--packet_size",
+    "-ps",
+    default=64,
+    type=int,
+    required=False,
+    help="The data tcp packet length",
+    show_default=True,
+)
+@click.option(
+    "--verbosity",
+    "-v",
+    default=1,
+    type=click.Choice(["0", "1", "2"]),
+    required=False,
+    help="Increase output verbosity",
+    show_default=True,
+)
+def run(file: str, address: str, port: int, packet_size: int, verbosity: int) -> None:
+    """Emulate a Micromed TCP client based on a TRC file"""
     logging.basicConfig(level=0, format=("%(asctime)s\t\t%(levelname)s\t\t%(message)s"))
-    parser = argparse.ArgumentParser(
-        description="Emulate a Micromed TCP client based on a TRC file"
-    )
-    parser.add_argument(
-        "-p",
-        "--port",
-        type=int,
-        default=5123,
-        help="The TCP port number to connect to. The default is 5123",
-    )
-    parser.add_argument(
-        "-f",
-        "--file",
-        type=str,
-        help="the TRC file to emulate",
-    )
-    parser.add_argument(
-        "-a",
-        "--address",
-        type=str,
-        default="localhost",
-        help="the TCP address to connect to. The default is localhost.",
-    )
-    parser.add_argument(
-        "-l",
-        "--len",
-        type=int,
-        default=64,
-        help="The data tcp packet length. The default is 64.",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbosity",
-        type=int,
-        choices=[0, 1, 2],
-        default=1,
-        help="Increase output verbosity. The default is 1.",
-    )
-    args = parser.parse_args()
-
-    # convert to variable
-    packet_len = args.len
-    filepath_trc = args.file  # path to file to emulate
-    tcp_port = args.port
-    tcp_address = args.address
-    verbosity = args.verbosity
-
+    verbosity = int(verbosity)  # because of click choice...
     # check if trc file exists
-    if not Path(filepath_trc).exists():
-        raise FileNotFoundError(f"{args.file} does not exist")
+    if not Path(file).exists():
+        raise FileNotFoundError(f"{file} does not exist")
 
     # open trc file
-    with open(args.file, "rb") as f:
+    with open(str(Path(file)), "rb") as f:
         b_data_trc = f.read()
     if verbosity >= 1:
         logging.info("TRC file read done.")
@@ -83,7 +76,7 @@ if __name__ == "__main__":
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # Bind the socket to the port
-    server_address = (tcp_address, tcp_port)
+    server_address = (address, port)
     if verbosity >= 1:
         logging.info("starting up on %s port %s" % server_address)
     is_not_connected = True
@@ -99,7 +92,7 @@ if __name__ == "__main__":
     data_length = (
         micromed_io.micromed_header.nb_of_channels
         * micromed_io.micromed_header.nb_of_bytes
-        * packet_len
+        * packet_size
     )
     s = micromed_io.micromed_header.data_address
     if verbosity >= 1:
@@ -107,7 +100,7 @@ if __name__ == "__main__":
         logging.info(f"Sending {len(b_data_trc[s:]) // data_length} packets")
 
     # Time between 2 packets in sec
-    trigger_time = packet_len / micromed_io.micromed_header.min_sampling_rate
+    trigger_time = packet_size / micromed_io.micromed_header.min_sampling_rate
 
     # Send the Micromed header data
     tcp_header = bytearray(b"MICM")
@@ -151,3 +144,7 @@ if __name__ == "__main__":
     # Clean up the connection
     logging.info("Closing the server")
     sock.close()
+
+
+if __name__ == "__main__":
+    run()

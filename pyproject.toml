@@ -8,9 +8,13 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8"
 mne = "^1.0.0"
+click = "^8.1.7"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+
+[tool.poetry.scripts]
+mmio_tcp_emulator = "scripts.emulate_trc_tcpip:run"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
