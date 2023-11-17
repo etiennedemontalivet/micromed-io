@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "micromed-io"
-version = "0.2.2"
+version = "0.2.3"
 description = "A library to handle Micromed data"
 authors = ["Etienne de MONTALIVET <etienne.demontalivet@protonmail.com>"]
 readme = "README.md"
