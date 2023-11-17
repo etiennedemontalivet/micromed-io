@@ -58,10 +58,25 @@ micromed_buffer = MicromedBuffer(epoch_duration=5, epoch_overlap=2.5)
 
 ```
 
+## Read TRC file
+
+``` python
+from micromed_io.trc import MicromedTRC
+mmtrc = MicromedTRC("sample.TRC")
+```
+Then you have access to the *trc* data:
+``` python
+mmtrc.get_header()
+mmtrc.get_markers()
+mmtrc.get_data()
+mmtrc.get_notes()
+```
+> **Note:** ``get_data()`` might take times because it loads the brain data
+
 ## TODO
 
-- Include serial markers parsing
-- Parse all info from Micromed header
-- Emulate serial markers + notes
+- [x] Include serial markers parsing
+- [ ] Parse all info from Micromed header
+- [ ] Emulate serial markers + notes
 
 Please feel free to reach me if you want to contribute.
