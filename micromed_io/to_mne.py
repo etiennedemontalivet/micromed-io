@@ -6,35 +6,7 @@ from typing import List, Union
 import mne
 import numpy as np
 from micromed_io.header import MICROMED_ACQ_EQUIPMENT
-from micromed_io.in_out import MicromedIO
-
-
-def get_indexes(l1: list, l2: list) -> list:
-    """Extract indexes of list ``l1`` items from list ``l2``
-
-    Parameters
-    ----------
-    l1 : list
-        The list of items to get the indexes
-    l2 : list
-        The list from which to extract the indexes
-
-    Returns
-    -------
-    np.ndarray
-        A numpy 1d-array containing the indexes in ``l2`` of items from ``l1``
-
-    Notes
-    -----
-    The function works only if all items from ``l1`` are present once and only once in ``l2``
-    """
-    indexes = []
-    for item1 in l1:
-        for i, item2 in enumerate(l2):
-            if item1 == item2:
-                indexes.append(i)
-                break
-    return np.array(indexes)
+from micromed_io.trc import MicromedTRC
 
 
 def create_mne_from_micromed_recording(
@@ -76,36 +48,26 @@ def create_mne_from_micromed_recording(
     >>> mne_raw = create_mne_from_micromed_recording("path/to/file.TRC")
 
     """
-    with open(recording_file, "rb") as f:
-        data = f.read()
-
-    micromed_io = MicromedIO()
-    micromed_io.decode_data_header_packet(data)
-    micromed_io.decode_operator_note_packet(
-        data[micromed_io.micromed_header.note_address :]
-    )
-    micromed_io.decode_data_eeg_packet(data[micromed_io.micromed_header.data_address :])
+    micromed_trc = MicromedTRC(recording_file)
 
     if sub_channels is None:
-        sub_channels = micromed_io.micromed_header.ch_names
-
-    sub_channels_ids = get_indexes(sub_channels, micromed_io.micromed_header.ch_names)
-    sub_eegs = micromed_io.current_data_eeg[sub_channels_ids, :]
+        sub_channels = micromed_trc.micromed_header.ch_names
+    sub_eegs = micromed_trc.get_data(picks=sub_channels)
 
     info = mne.create_info(
         ch_names=sub_channels,
-        sfreq=micromed_io.micromed_header.min_sampling_rate,
+        sfreq=micromed_trc.sfreq,
         ch_types=ch_types,
     )
     info["device_info"] = {
         "type": "Micromed",
-        "model": MICROMED_ACQ_EQUIPMENT[micromed_io.micromed_header.acq_unit]
-        if micromed_io.micromed_header.acq_unit in MICROMED_ACQ_EQUIPMENT
-        else str(micromed_io.micromed_header.acq_unit),
+        "model": MICROMED_ACQ_EQUIPMENT[micromed_trc.micromed_header.acq_unit]
+        if micromed_trc.micromed_header.acq_unit in MICROMED_ACQ_EQUIPMENT
+        else str(micromed_trc.micromed_header.acq_unit),
         "site": "Unknown",
     }
     info["subject_info"] = {
-        "his_id": micromed_io.micromed_header.name,
+        "his_id": micromed_trc.micromed_header.name,
         "sex": 0,
     }
 
@@ -114,13 +76,19 @@ def create_mne_from_micromed_recording(
         info,
     )
     raw.set_meas_date(
-        micromed_io.micromed_header.recording_date.replace(tzinfo=timezone.utc)
+        micromed_trc.micromed_header.recording_date.replace(tzinfo=timezone.utc)
     )
 
-    # Add annotations from recording
-    for sample_note, comment in micromed_io.notes.items():
+    # Add annotations from notes
+    for note_sample, note_val in micromed_trc.get_notes().items():
         raw.annotations.append(
-            onset=sample_note / info["sfreq"], duration=0, description=comment
+            onset=note_sample / info["sfreq"], duration=0, description=note_val
+        )
+
+    # Add annotations from markers
+    for marker_sample, marker_val in micromed_trc.get_markers().items():
+        raw.annotations.append(
+            onset=marker_sample / info["sfreq"], duration=0, description=marker_val
         )
 
     return raw
