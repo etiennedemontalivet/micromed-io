@@ -13,7 +13,9 @@ import time
 import logging
 from pathlib import Path
 import click
+import sys
 
+sys.path.append("..")
 from micromed_io.in_out import MicromedIO
 
 PACKET_TIME = 64  # ms
