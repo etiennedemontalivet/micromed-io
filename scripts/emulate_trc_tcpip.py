@@ -8,12 +8,15 @@ HOW TO USE:
 > python emulate_trc_tcpip.py --file=../data/sample.TRC
 """
 import socket
+from datetime import datetime
 import time
 import logging
 from pathlib import Path
 import click
 
 from micromed_io.in_out import MicromedIO
+
+PACKET_TIME = 64  # ms
 
 
 @click.command(context_settings=dict(max_content_width=120))
@@ -37,24 +40,15 @@ from micromed_io.in_out import MicromedIO
     show_default=True,
 )
 @click.option(
-    "--packet_size",
-    "-ps",
-    default=64,
-    type=int,
-    required=False,
-    help="The data tcp packet length",
-    show_default=True,
-)
-@click.option(
     "--verbosity",
     "-v",
-    default=1,
+    default="1",
     type=click.Choice(["0", "1", "2"]),
     required=False,
     help="Increase output verbosity",
     show_default=True,
 )
-def run(file: str, address: str, port: int, packet_size: int, verbosity: int) -> None:
+def run(file: str, address: str, port: int, verbosity: int) -> None:
     """Emulate a Micromed TCP client based on a TRC file"""
     logging.basicConfig(level=0, format=("%(asctime)s\t\t%(levelname)s\t\t%(message)s"))
     verbosity = int(verbosity)  # because of click choice...
@@ -89,18 +83,19 @@ def run(file: str, address: str, port: int, packet_size: int, verbosity: int) ->
             logging.warning(e)
 
     # some general variables
-    data_length = (
+    sample_length = (
         micromed_io.micromed_header.nb_of_channels
         * micromed_io.micromed_header.nb_of_bytes
-        * packet_size
     )
+    sfreq = micromed_io.micromed_header.min_sampling_rate
+    n_samples_per_packet = int(PACKET_TIME * 1e3 / sfreq)
+    packet_length = sample_length * n_samples_per_packet
     s = micromed_io.micromed_header.data_address
     if verbosity >= 1:
         logging.info("Connected!")
-        logging.info(f"Sending {len(b_data_trc[s:]) // data_length} packets")
-
-    # Time between 2 packets in sec
-    trigger_time = packet_size / micromed_io.micromed_header.min_sampling_rate
+        logging.info(
+            f"Sending {len(b_data_trc[s:]) // sample_length} samples for {len(b_data_trc[s:]) / (sample_length * sfreq)} sec"
+        )
 
     # Send the Micromed header data
     tcp_header = bytearray(b"MICM")
@@ -113,33 +108,42 @@ def run(file: str, address: str, port: int, packet_size: int, verbosity: int) ->
     sock.send(b_data_trc[:s])  # send micromed header
     time.sleep(0.1)  # give time for the header to be sent
 
-    starttime = time.time()
-    for i in range(len(b_data_trc[s:]) // data_length):
-        try:
-            tcp_header = bytearray(b"MICM")
-            tcp_header.extend((1).to_bytes(2, byteorder="little"))
-            tcp_header.extend(data_length.to_bytes(4, byteorder="little"))
-            sock.send(tcp_header)
-            time.sleep(trigger_time / 10)
-            sock.send(b_data_trc[s + i * (data_length) : s + (i + 1) * data_length])
+    start_time = datetime.now()
+    current_data_sample = 0
+    while True:
+        if (current_data_sample + n_samples_per_packet) / sfreq <= (
+            datetime.now() - start_time
+        ).total_seconds():
+            current_data_sample += n_samples_per_packet
+            try:
+                tcp_header = bytearray(b"MICM")
+                tcp_header.extend((1).to_bytes(2, byteorder="little"))
+                tcp_header.extend(packet_length.to_bytes(4, byteorder="little"))
+                sock.send(tcp_header)
+                time.sleep(1e-3)
+                sock.send(
+                    b_data_trc[
+                        s
+                        + current_data_sample * (packet_length) : s
+                        + (current_data_sample + 1) * packet_length
+                    ]
+                )
 
-        except Exception as e:
-            logging.error("exception catched: " + str(e))
-            break
+            except Exception as e:
+                logging.error("exception catched: " + str(e))
+                break
 
-        # debug only
-        if verbosity == 2:
-            logging.info(f"sending bytes")
+            # debug only
+            if verbosity == 2:
+                logging.info(f"sending bytes")
 
-        # wait before next packet
-        time_to_sleep = trigger_time - ((time.time() - starttime) % trigger_time)
-        if time_to_sleep > 0:
-            time.sleep(time_to_sleep)
-        else:
-            logging.warning(
-                f"WARNING: we are in the rush: time_to_seelp={time_to_sleep}."
-                + "Increase packet size."
-            )
+            # check if no more data
+            if (
+                current_data_sample + n_samples_per_packet
+                >= len(b_data_trc[s:]) / sample_length
+            ):
+                logging.info("TRC file over")
+                break
 
     # Clean up the connection
     logging.info("Closing the server")
