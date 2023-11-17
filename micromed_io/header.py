@@ -119,9 +119,9 @@ class MicromedHeader:
     recording_date: datetime
         The date of file creation and therefore the recording date.
     notes : dict
-        Notes entered in Micromed interface. Keys are samples and values are comments.
+        Notes entered in Micromed interface. Keys are samples and values are comments (str).
     markers : dict
-        Serial markers received by Micromed. Key is the sample and value is the marker value.
+        Serial markers received by Micromed. Key is the sample and value is the marker value (str).
     """
 
     surname: str = None

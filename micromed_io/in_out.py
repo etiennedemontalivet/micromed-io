@@ -216,7 +216,7 @@ class MicromedIO:
         for marker_sample, marker_val in markers:
             if marker_sample == 4294967295 and marker_val == 65535:
                 break
-            markers_dict[marker_sample] = marker_val
+            markers_dict[marker_sample] = str(marker_val)
         self.micromed_header.markers = markers_dict
 
         # NOTES
