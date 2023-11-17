@@ -5,6 +5,10 @@ from typing import List
 import logging
 import numpy as np
 from micromed_io.header import ElectrodeReferences, MicromedHeader
+from datetime import datetime
+from struct import unpack
+
+from numpy import dtype
 
 
 class MicromedIO:
@@ -34,6 +38,8 @@ class MicromedIO:
         Example : ["Fp1-G2", "Fpz-G2", "MKR+-MKR-"]
     picks_id : np.array
         Indexes of the channels to pick.
+    sfreq : float
+        The sampling frequency
 
 
     See also
@@ -56,9 +62,8 @@ class MicromedIO:
         self.notes = {}
         self.note_start_offset = -1
 
-    def decode_data_header_packet(self, packet: bytearray):
+    def decode_data_header_packet(self, packet: bytearray) -> None:
         """Decode most of the micromed header data packet.
-        TODO: include markers
 
         Parameters
         ----------
@@ -69,10 +74,8 @@ class MicromedIO:
         ------
         ValueError
             If any "fixCode" sent by Micromed is not corresponding (LABCOD, ORDER,...)
-            cf detailed documentation.
 
         """
-
         self.micromed_header.surname = packet[64 : (64 + 22)].decode().strip("\x00")
         self.micromed_header.name = packet[86 : (86 + 20)].decode().strip("\x00")
         self.micromed_header.acq_unit = int.from_bytes(packet[134:136], "little")
@@ -80,6 +83,7 @@ class MicromedIO:
         self.micromed_header.min_sampling_rate = int.from_bytes(
             packet[146:148], "little"
         )
+        self.sfreq = self.micromed_header.min_sampling_rate
         self.micromed_header.recording_date = datetime(
             day=int.from_bytes(packet[128:129], "little"),
             month=int.from_bytes(packet[129:130], "little"),
@@ -99,11 +103,24 @@ class MicromedIO:
                 + "Parsing is inappropriate."
             )
 
-        # Retrieve stored channels ID
-        if packet[176 : 176 + 8].decode("utf-8").strip() != "ORDER":
-            raise ValueError(
-                f"[MICROMED IO] Error: {packet[176 : 176 + 8]} must be equal to 'ORDER'"
+        # get zones position and length
+        zones = {}
+        for i_zone in range(15):
+            zname, pos, length = unpack(
+                "8sII", packet[176 + i_zone * 16 : 176 + (i_zone + 1) * 16]
             )
+            zname = zname.decode("iso-8859-1").strip()
+            zones[zname] = pos, length
+
+        # ORDER
+        pos, length = zones["ORDER"]
+        self.micromed_header.order = np.frombuffer(
+            packet[(pos) : (pos + length)],
+            dtype="u2",
+            count=self.micromed_header.nb_of_channels,
+        )
+
+        # Retrieve stored channels name
         code_start_offset = int.from_bytes(packet[184:188], "little")
         self.micromed_header.stored_channels = []
         for iCh in range(self.micromed_header.nb_of_channels):
@@ -115,11 +132,9 @@ class MicromedIO:
                     "little",
                 )
             )
-
-        # Retrieve stored channels name
         if packet[192 : 192 + 8].decode("utf-8").strip() != "LABCOD":
             raise ValueError(
-                f"[MICROMED TCP] Error: {packet[192 : 192 + 8].decode()} must be equal to 'LABCOD'"
+                f"[MICROMED IO] Error: {packet[192 : 192 + 8].decode()} must be equal to 'LABCOD'"
             )
         elec_start_offset = int.from_bytes(packet[200:204], "little")
         self.micromed_header.ch_names = []
@@ -149,13 +164,6 @@ class MicromedIO:
                 .strip("\x00")
             )
             self.micromed_header.ch_names.append(f"{pos_elec}-{neg_elec}")
-
-        # Retrieve note area
-        if packet[208 : 208 + 8].decode("utf-8").strip() != "NOTE":
-            raise ValueError(
-                f"[MICROMED IO] Error: {packet[208 : 208 + 8].decode()} must be equal to 'NOTE'"
-            )
-        self.micromed_header.note_address = int.from_bytes(packet[216:220], "little")
 
         # construct the indexes of channels to pick in epoch buffer
         if self.picks is None:
@@ -198,24 +206,42 @@ class MicromedIO:
             )
             self.micromed_header.elec_refs.append(refs)
 
+        # MARKERS
+        pos, length = zones["TRIGGER"]
+        dt = dtype([("sample", "u4"), ("code", "u2")])
+        markers = np.frombuffer(
+            packet[pos : pos + length], dtype=dt, count=int(length / dt.itemsize)
+        )
+        markers_dict = {}
+        for marker_sample, marker_val in markers:
+            if marker_sample == 4294967295 and marker_val == 65535:
+                break
+            markers_dict[marker_sample] = marker_val
+        self.micromed_header.markers = markers_dict
+
+        # NOTES
+        pos, length = zones["NOTE"]
+        dt = dtype([("sample", "u4"), ("text", "S40")])
+        notes = np.frombuffer(
+            packet[pos : pos + length], dtype=dt, count=int(length / dt.itemsize)
+        )
+        notes_dict = {}
+        for note_sample, note_val in notes:
+            if note_sample == 0:
+                break
+            notes_dict[note_sample] = note_val.decode("utf-8")
+        self.micromed_header.notes = notes_dict
+
     def decode_operator_note_packet(self, note_packet: bytearray):
         """Decode the operator notes
+        TODO
 
         Parameters
         ----------
         note_packet : bytearray
             The packet to decode. It must start at the note area.
         """
-        for iNote in range(200):  # 200 = MAX_NOTE
-            sample = int.from_bytes(note_packet[44 * iNote : 44 * iNote + 4], "little")
-            comment = (
-                note_packet[44 * iNote + 4 : 44 * (iNote + 1)]
-                .decode("utf-8")
-                .strip("\x00")
-            )
-            if sample == 0:  # that means no note anymore. cf Micromed doc
-                break
-            self.notes[sample] = comment
+        pass
 
     # pylint: disable=too-many-branches,too-many-statements
     def decode_data_eeg_packet(

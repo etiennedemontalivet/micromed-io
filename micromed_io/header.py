@@ -118,15 +118,16 @@ class MicromedHeader:
         The byte address of note packet start (useless in TCP context)
     recording_date: datetime
         The date of file creation and therefore the recording date.
-
-    See also
-    --------
-    ElectrodeReferences
+    notes : dict
+        Notes entered in Micromed interface. Keys are samples and values are comments.
+    markers : dict
+        Serial markers received by Micromed. Key is the sample and value is the marker value.
     """
 
     surname: str = None
     name: str = None
     nb_of_channels: int = None
+    order: list = None
     acq_unit: int = None
     min_sampling_rate: int = None
     nb_of_bytes: int = None
@@ -137,5 +138,6 @@ class MicromedHeader:
     # [logic_min, logic_max, logic_ground, phy_min, phy_max, units]
     elec_refs: list = None
     data_address: int = None
-    note_address: int = None
     recording_date: datetime = None
+    notes: dict = None
+    markers: dict = None
