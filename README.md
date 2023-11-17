@@ -78,5 +78,6 @@ mmtrc.get_notes()
 - [x] Include serial markers parsing
 - [ ] Parse all info from Micromed header
 - [ ] Emulate serial markers + notes
+- [ ] Add tests 
 
 Please feel free to reach me if you want to contribute.
