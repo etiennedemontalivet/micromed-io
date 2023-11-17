@@ -4,6 +4,9 @@ version = "0.2.4"
 description = "A library to handle Micromed data"
 authors = ["Etienne de MONTALIVET <etienne.demontalivet@protonmail.com>"]
 readme = "README.md"
+packages = [
+    { include = "scripts/emulate_trc_tcpip.py" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
