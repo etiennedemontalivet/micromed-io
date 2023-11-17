@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "micromed-io"
-version = "0.2.8"
+version = "0.2.9"
 description = "A library to handle Micromed data"
 authors = ["Etienne de MONTALIVET <etienne.demontalivet@protonmail.com>"]
 readme = "README.md"
@@ -14,7 +14,7 @@ click = "^8.1.7"
 pytest = "^5.2"
 
 [tool.poetry.scripts]
-mmio_tcp_emulator = "scripts.emulate_trc_tcpip:run"
+mmio_tcp_emulator = "micromed_io.emulate_trc_tcpip:run"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
