@@ -9,12 +9,14 @@ readme = "README.md"
 python = "^3.8"
 mne = "^1.0.0"
 click = "^8.1.7"
+pylsl = "^1.16.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 
 [tool.poetry.scripts]
 mmio_tcp_emulator = "micromed_io.emulate_trc_tcpip:run"
+mmio_to_lsl = "micromed_io.read_tcp_to_lsl:run"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

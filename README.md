@@ -26,18 +26,19 @@ mmio_tcp_emulator --file=../data/sample.TRC --address=localhost --port=5123
 mmio_tcp_emulator --help
 ```
 
-### From python script
+More details in the script ``emulate_trc_tcpip.py`` in the [gihub repo](https://github.com/etiennedemontalivet/micromed-io)
 
-Download `emulate_trc_tcpip.py` from the [gihub repo](https://github.com/etiennedemontalivet/micromed-io) in *scripts/*
+
+## Read TCP and push to LSL Stream
+
+Use the following command:
 
 ``` bash
-python emulate_trc_tcpip.py --file=../data/sample.TRC --address=localhost --port=5123
+mmio_to_lsl --address=localhost --port=5123 --lsl-name=whatever --lsl-type=whatever --lsl-source-id=whatever
+mmio_to_lsl --help
 ```
 
-More details:
-``` bash
-python emulate_trc_tcpip.py --help
-```
+More details in the script ``read_tcp_to_lsl.py`` int the [gihub repo](https://github.com/etiennedemontalivet/micromed-io)
 
 ## Read and parse Micromed TCP live data
 
@@ -72,6 +73,17 @@ mmtrc.get_data()
 mmtrc.get_notes()
 ```
 > **Note:** ``get_data()`` might take times because it loads the brain data
+
+## Local install
+
+Download the repo and:
+
+```
+conda env create -f environment.yml
+conda activate mmio
+poetry install
+```
+
 
 ## TODO
 
