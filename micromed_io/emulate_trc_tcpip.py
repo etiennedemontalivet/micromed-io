@@ -14,7 +14,7 @@ import logging
 from pathlib import Path
 import click
 
-from .in_out import MicromedIO
+from micromed_io.in_out import MicromedIO
 
 PACKET_TIME = 64  # ms
 
@@ -88,13 +88,13 @@ def run(file: str, address: str, port: int, verbosity: int) -> None:
         * micromed_io.micromed_header.nb_of_bytes
     )
     sfreq = micromed_io.micromed_header.min_sampling_rate
-    n_samples_per_packet = int(PACKET_TIME * 1e3 / sfreq)
+    n_samples_per_packet = int(PACKET_TIME * 1e-3 * sfreq)
     packet_length = sample_length * n_samples_per_packet
     s = micromed_io.micromed_header.data_address
     if verbosity >= 1:
         logging.info("Connected!")
         logging.info(
-            f"Sending {len(b_data_trc[s:]) // sample_length} samples for {len(b_data_trc[s:]) / (sample_length * sfreq)} sec"
+            f"got {len(b_data_trc[s:])} bytes - Sending {len(b_data_trc[s:]) // sample_length} samples for {len(b_data_trc[s:]) / (sample_length * sfreq)} sec"
         )
 
     # Send the Micromed header data
@@ -121,12 +121,13 @@ def run(file: str, address: str, port: int, verbosity: int) -> None:
                 tcp_header.extend(packet_length.to_bytes(4, byteorder="little"))
                 sock.send(tcp_header)
                 time.sleep(1e-3)
-                sock.send(
-                    b_data_trc[
+                data_to_send = b_data_trc[
                         s
-                        + current_data_sample * (packet_length) : s
-                        + (current_data_sample + 1) * packet_length
+                        + current_data_sample * (sample_length) : s
+                        + (current_data_sample + n_samples_per_packet) * sample_length
                     ]
+                sock.send(
+                    data_to_send
                 )
 
             except Exception as e:
@@ -135,7 +136,7 @@ def run(file: str, address: str, port: int, verbosity: int) -> None:
 
             # debug only
             if verbosity == 2:
-                logging.info(f"sending bytes")
+                logging.info(f"sending {len(data_to_send)}bytes with packet_len={packet_length}; current_ds={current_data_sample}; s={s}")
 
             # check if no more data
             if (
