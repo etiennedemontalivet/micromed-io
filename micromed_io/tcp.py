@@ -18,6 +18,27 @@ class MicromedPacketType(IntEnum):
     MARKER = 3
 
 
+def get_tcp_header(packet_type: MicromedPacketType, size: int) -> bytearray:
+    """Build the Micromed TCP header
+
+    Parameters
+    ----------
+    packet_type : MicromedPacketType
+        The packet type to be sent
+    size : int
+        The size of the packet to be sent
+
+    Returns
+    -------
+    bytearray
+        The TCP header sent right before any packet
+    """
+    tcp_header = bytearray(b"MICM")
+    tcp_header.extend((packet_type).to_bytes(2, byteorder="little"))
+    tcp_header.extend(size.to_bytes(4, byteorder="little"))
+    return tcp_header
+
+
 def decode_tcp_header_packet(packet: bytearray):
     """Decode the Micromed tcp header packet.
 
@@ -45,7 +66,7 @@ def decode_tcp_header_packet(packet: bytearray):
     return packet_type, next_packet_size
 
 
-def decode_tcp_markers_packet(packet: bytearray):
+def decode_tcp_marker_packet(packet: bytearray):
     """Decode the Micromed tcp markers packet.
 
     Parameters
