@@ -2,8 +2,9 @@
 
 import sys
 from enum import IntEnum
+import struct
+import numpy as np
 
-sys.path.append("..")
 import logging
 
 from micromed_io.in_out import MicromedIO
@@ -80,6 +81,67 @@ def decode_tcp_marker_packet(packet: bytearray):
         trigger_sample: the sample when the marker is received
         trigger_value: trigger value
     """
+
     trigger_sample = int.from_bytes(packet[:4], byteorder="little")
     trigger_value = int.from_bytes(packet[4:6], byteorder="little")
     return trigger_sample, trigger_value
+
+
+def decode_tcp_note_packet(packet: bytearray):
+    """Decode the Micromed tcp markers packet.
+
+    Parameters
+    ----------
+    packet : bytearray
+        The tcp packet to decode.
+
+    Returns
+    -------
+    tuple
+        trigger_sample: the sample when the marker is received
+        trigger_value: trigger value
+    """
+
+    note_sample = struct.unpack("<I", packet[:4])
+    note_value = packet[4:].decode(encoding="utf-8").rstrip("\x00")
+    return note_sample, note_value
+
+
+def encode_note_packet(sample: np.uint32, note: str) -> bytearray:
+    """Encode a note packet with sample and text
+
+    Parameters
+    ----------
+    sample : np.uint32
+        The sample when note occured
+    note : str
+        The text
+
+    Returns
+    -------
+    bytearray
+        The encoded packet
+    """
+    packet = struct.pack("<I", sample)
+    packet += struct.pack("<40s", (note).encode(encoding="utf-8"))
+    return packet
+
+
+def encode_marker_packet(sample: np.uint32, marker: np.uint16) -> bytearray:
+    """Encode a marker packet with sample and value
+
+    Parameters
+    ----------
+    sample : np.uint32
+        The sample when marker occured
+    marker : np.uint16
+        The marker value
+
+    Returns
+    -------
+    bytearray
+        The encoded packet
+    """
+    packet = struct.pack("<I", sample)
+    packet += struct.pack("<H", marker)
+    return packet

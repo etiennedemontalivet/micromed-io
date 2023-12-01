@@ -232,17 +232,6 @@ class MicromedIO:
             notes_dict[note_sample] = note_val.decode("utf-8")
         self.micromed_header.notes = notes_dict
 
-    def decode_operator_note_packet(self, note_packet: bytearray):
-        """Decode the operator notes
-        TODO
-
-        Parameters
-        ----------
-        note_packet : bytearray
-            The packet to decode. It must start at the note area.
-        """
-        pass
-
     # pylint: disable=too-many-branches,too-many-statements
     def decode_data_eeg_packet(
         self,

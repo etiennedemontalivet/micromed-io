@@ -9,18 +9,25 @@ HOW TO USE:
 """
 import logging
 import socket
+import numpy as np
 import time
 from datetime import datetime
 from pathlib import Path
-
 import click
 
 from micromed_io.in_out import MicromedIO
-from micromed_io.tcp import MicromedPacketType, get_tcp_header
+import micromed_io.tcp as mmio_tcp
 
 
 @click.command(context_settings=dict(max_content_width=120))
-@click.option("--file", "-f", type=str, required=True, help="the TRC file to emulate")
+@click.option(
+    "--file",
+    "-f",
+    type=str,
+    default="data/notes.TRC",
+    required=False,
+    help="the TRC file to emulate",
+)
 @click.option(
     "--address",
     "-a",
@@ -124,7 +131,9 @@ def run(
         )
 
     # Send the Micromed header data
-    tcp_header = get_tcp_header(MicromedPacketType.HEADER, header_address)
+    tcp_header = mmio_tcp.get_tcp_header(
+        mmio_tcp.MicromedPacketType.HEADER, header_address
+    )
     if verbosity >= 1:
         logging.info("Sending Micromed header")
     sock.send(tcp_header)
@@ -141,15 +150,15 @@ def run(
                 current_data_sample += n_samples_per_packet
 
                 # check that we are on time
-                if (current_data_sample + 5 * n_samples_per_packet) / sfreq <= (
-                    datetime.now() - start_time
-                ).total_seconds():
-                    logging.error(
-                        "Critical error: Running out of time. Please increase the packe_size so the emulator can send all the data on time."
-                    )
-                    return
+                # if (current_data_sample + 5 * n_samples_per_packet) / sfreq <= (
+                #     datetime.now() - start_time
+                # ).total_seconds():
+                #     logging.error(
+                #         "Critical error: Running out of time. Please increase the packe_size so the emulator can send all the data on time."
+                #     )
+                #     return
 
-                # send marker if any
+                # SEND MARKER
                 to_rm = []
                 for marker_sample, marker_value in markers.items():
                     if marker_sample <= current_data_sample:
@@ -157,15 +166,15 @@ def run(
                         if verbosity >= 1:
                             logging.info(f"Sending marker: {marker_value}")
 
-                        tcp_header = get_tcp_header(MicromedPacketType.MARKER, 6)
+                        tcp_header = mmio_tcp.get_tcp_header(
+                            mmio_tcp.MicromedPacketType.MARKER, 6
+                        )
                         sock.send(tcp_header)
-                        data_to_send = int(marker_sample).to_bytes(
-                            4, byteorder="little"
-                        )
-                        data_to_send += int(marker_value).to_bytes(
-                            2, byteorder="little"
-                        )
-                        sock.send(data_to_send)  # send micromed header
+                        sock.send(
+                            mmio_tcp.encode_marker_packet(
+                                marker_sample, np.uint16(marker_value)
+                            )
+                        )  # send micromed header
                         to_rm.append(marker_sample)
                     else:
                         # we can stop cause dict is sorted
@@ -174,12 +183,30 @@ def run(
                 # remove sent markers
                 [markers.pop(k) for k in to_rm]
 
-                # send note if any
-                # TODO
+                # SEND NOTE_
+                to_rm = []
+                for note_sample, note_value in notes.items():
+                    if note_sample <= current_data_sample:
+                        # send marker
+                        if verbosity >= 1:
+                            logging.info(f"Sending note: {note_value}")
 
-                # send data
-                tcp_header = get_tcp_header(
-                    MicromedPacketType.EEG_DATA, eeg_packet_length
+                        tcp_header = mmio_tcp.get_tcp_header(
+                            mmio_tcp.MicromedPacketType.NOTE, 44
+                        )
+                        sock.send(tcp_header)
+                        sock.send(mmio_tcp.encode_note_packet(note_sample, note_value))
+                        to_rm.append(note_sample)
+                    else:
+                        # we can stop cause dict is sorted
+                        # this is for time optimization
+                        break
+                # remove sent markers
+                [notes.pop(k) for k in to_rm]
+
+                # SEND DATA
+                tcp_header = mmio_tcp.get_tcp_header(
+                    mmio_tcp.MicromedPacketType.EEG_DATA, eeg_packet_length
                 )
                 sock.send(tcp_header)
                 data_to_send = b_data_trc[
