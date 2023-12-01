@@ -20,14 +20,7 @@ import micromed_io.tcp as mmio_tcp
 
 
 @click.command(context_settings=dict(max_content_width=120))
-@click.option(
-    "--file",
-    "-f",
-    type=str,
-    default="data/notes.TRC",
-    required=False,
-    help="the TRC file to emulate",
-)
+@click.option("--file", "-f", type=str, required=True, help="the TRC file to emulate")
 @click.option(
     "--address",
     "-a",
@@ -150,13 +143,13 @@ def run(
                 current_data_sample += n_samples_per_packet
 
                 # check that we are on time
-                # if (current_data_sample + 5 * n_samples_per_packet) / sfreq <= (
-                #     datetime.now() - start_time
-                # ).total_seconds():
-                #     logging.error(
-                #         "Critical error: Running out of time. Please increase the packe_size so the emulator can send all the data on time."
-                #     )
-                #     return
+                if (current_data_sample + 5 * n_samples_per_packet) / sfreq <= (
+                    datetime.now() - start_time
+                ).total_seconds():
+                    logging.error(
+                        "Critical error: Running out of time. Please increase the packe_size so the emulator can send all the data on time."
+                    )
+                    return
 
                 # SEND MARKER
                 to_rm = []
