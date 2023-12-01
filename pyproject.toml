@@ -15,8 +15,8 @@ pylsl = "^1.16.2"
 pytest = "^5.2"
 
 [tool.poetry.scripts]
-mmio_tcp_emulator = "micromed_io.scripts.emulate_online_trc:run"
-mmio_to_lsl = "micromed_io.scripts.tcp_to_lsl:run"
+mmio_emulate_trc = "micromed_io.scripts.emulate_online_trc:run"
+mmio_tcp_to_lsl = "micromed_io.scripts.tcp_to_lsl:run"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

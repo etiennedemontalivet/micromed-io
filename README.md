@@ -1,6 +1,10 @@
 # Micromed library
 
-Library to handle Micromed data. It also provides some useful scripts.
+Library to handle Micromed data. Main features:
+
+* simulate online data from a trc file
+* push online tcp data to LSL server
+* convert trc to mne format
 
 ## Install
 
@@ -15,48 +19,37 @@ from micromed_io.to_mne import create_mne_from_micromed_recording
 mne_raw = create_mne_from_micromed_recording("path/to/file.TRC")
 ```
 
-## Emulate Micromed TCP from *.trc* file
-
-### CLI tool
-
-Use the following command:
+## Emulate Online Micromed TCP from *.trc* file
 
 ``` bash
-mmio_tcp_emulator --file=../data/sample.TRC --address=localhost --port=5123
-mmio_tcp_emulator --help
+mmio_emulate_trc --file=../data/sample.TRC --address=localhost --port=5123
 ```
 
-More details in the script ``emulate_trc_tcpip.py`` in the [gihub repo](https://github.com/etiennedemontalivet/micromed-io)
+Emulate the online data stream of Micromed to test your real-time platform.
+See all the arguments and adapt them:
 
+``` bash
+mmio_emulate_trc --help # to see all arguments
+```
+
+> **New**: not only data, but also markers and notes are send through TCP, exactly as Micromed does
 
 ## Read TCP and push to LSL Stream
 
-Use the following command:
-
 ``` bash
-mmio_to_lsl --address=localhost --port=5123 --lsl-name=whatever --lsl-type=whatever --lsl-source-id=whatever
-mmio_to_lsl --help
+mmio_tcp_to_lsl --address=localhost --port=5123
 ```
 
-More details in the script ``read_tcp_to_lsl.py`` int the [gihub repo](https://github.com/etiennedemontalivet/micromed-io)
+While receiving online data throug tcp, this command forward the data to 3 LSL stream outlets:
 
-## Read and parse Micromed TCP live data
+* Micromed_EEG: the eeg data in ``float32`` format ``[n_channels, n_samples]``
+* Micromed_Markers: markers if any in ``int32`` format ``[sample, marker]`` (2 channels)
+* Micromed_Notes: notes if any in ``string`` format ``[sample, note]`` (2 channels)
 
-Download `read_tcp_data.py` from the [gihub repo](https://github.com/etiennedemontalivet/micromed-io) in *scripts/*
+You can easily change the LSL parameters:
+
 ``` bash
-python read_tcp_data.py --address=localhost --port=5123
-```
-
-> **Note**: Micromed TCP behaves as a client. If you want to try the emulate/read TCP script, launch the reader first that acts as server, then the emulator. 
-
-## Read Micromed TCP in a sliding window buffer
-
-If you plan to use the Micromed data as input of a decoder, you probably want epochs of format `(n_channels, n_samples)`. Then the ``MicromedBuffer`` class is for you. The script ``read_tcp_to_epoch.py`` show you how to use it (see the ``PROCESS HERE`` comment). It uses a **buffer** that mimics the **sliding window** and triggers each time it is filled.
-
-``` python
-from micromed_io.buffer import MicromedBuffer
-micromed_buffer = MicromedBuffer(epoch_duration=5, epoch_overlap=2.5)
-
+mmio_tcp_to_lsl --help # to see all arguments
 ```
 
 ## Read TRC file
@@ -74,6 +67,25 @@ mmtrc.get_notes()
 ```
 > **Note:** ``get_data()`` might take times because it loads the brain data
 
+## Read and parse Micromed TCP live data
+
+Download `tcp_to_lsl.py` from the [gihub repo](https://github.com/etiennedemontalivet/micromed-io) in *scripts/*
+``` bash
+python tcp_to_lsl.py --address=localhost --port=5123
+```
+
+> **Note**: Micromed TCP behaves as a client. If you want to try the emulate/read TCP script, launch the reader first that acts as server, then the emulator. 
+
+## Read Micromed TCP in a sliding window buffer
+
+If you plan to use the Micromed data as input of a decoder, you probably want epochs of format `(n_channels, n_samples)`. Then the ``MicromedBuffer`` class is for you. The script ``read_tcp_to_epoch.py`` show you how to use it (see the ``PROCESS HERE`` comment). It uses a **buffer** that mimics the **sliding window** and triggers each time it is filled.
+
+``` python
+from micromed_io.buffer import MicromedBuffer
+micromed_buffer = MicromedBuffer(epoch_duration=5, epoch_overlap=2.5)
+
+```
+
 ## Local install
 
 Download the repo and:
@@ -89,7 +101,6 @@ poetry install
 
 - [x] Include serial markers parsing
 - [ ] Parse all info from Micromed header
-- [ ] Emulate serial markers + notes
-- [ ] Add tests 
+- [x] Emulate serial markers + notes
 
 Please feel free to reach me if you want to contribute.
