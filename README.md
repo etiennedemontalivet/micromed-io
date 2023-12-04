@@ -5,6 +5,7 @@ Library to handle Micromed data. Main features:
 * simulate online data from a trc file
 * push online tcp data to LSL server
 * convert trc to mne format
+* rename trc files to include the recording datetime
 
 ## Install
 
@@ -83,8 +84,22 @@ If you plan to use the Micromed data as input of a decoder, you probably want ep
 ``` python
 from micromed_io.buffer import MicromedBuffer
 micromed_buffer = MicromedBuffer(epoch_duration=5, epoch_overlap=2.5)
-
 ```
+
+## Rename TRC files with recording datetime
+
+``` bash
+mmio_rename_trc --dirpath=./ --format=%Y%m%d-%H%M%S
+```
+
+Rename the TRC files of the given folder to include the recording date in the filename.
+Output is : ``<filename>__<recording_date>.TRC``.
+The format must be compliant with python [strftime format codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes)
+
+``` bash
+mmio_rename_trc --help # to see help
+```
+
 
 ## Local install
 
