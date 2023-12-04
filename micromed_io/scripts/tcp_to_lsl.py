@@ -288,13 +288,15 @@ def run(
                     elif packet_type == mmio_tcp.MicromedPacketType.EEG_DATA:
                         if not micromed_io.decode_data_eeg_packet(b_data):
                             logging.error("Error in EEG data packet")
-                        # log only
-                        if verbosity >= 2:
-                            logging.info(
-                                f"Received EEG data: {micromed_io.current_data_eeg}"
-                            )
                         # forward to lsl
                         if lsl_eeg_outlet is not None:
+                            # send to lsl
+                            lsl_eeg_outlet.push_chunk(
+                                np.ascontiguousarray(
+                                    micromed_io.current_data_eeg.T.astype("float32")
+                                )
+                            )
+
                             # log only
                             if (
                                 verbosity >= 1
@@ -307,11 +309,10 @@ def run(
                                 logging.debug(
                                     f"Receiving TCP packet - LSL Sending chunk of size {micromed_io.current_data_eeg.T.shape}"
                                 )
-                            # send to lsl
-                            lsl_eeg_outlet.push_chunk(
-                                np.ascontiguousarray(
-                                    micromed_io.current_data_eeg.T.astype("float32")
-                                )
+                        # log only
+                        if verbosity >= 2:
+                            logging.info(
+                                f"Received EEG data: {micromed_io.current_data_eeg}"
                             )
 
                     elif packet_type == mmio_tcp.MicromedPacketType.NOTE:
