@@ -37,11 +37,11 @@ def run(dirpath: str = "./", format: str = "%Y%m%d-%H%M%S") -> None:
         for file in Path(dirpath).glob("*.TRC"):
             mmtrc = MicromedTRC(file)
             logging.info(
-                f"Renaming to: {file.name}__{mmtrc.get_header().recording_date.strftime(format)}"
+                f"Renaming to: {file.name[:-4]}__{mmtrc.get_header().recording_date.strftime(format)}"
             )
             file.rename(
                 file.parent
-                / f"{file.name}__{mmtrc.get_header().recording_date.strftime(format)}.TRC"
+                / f"{file.name[:-4]}__{mmtrc.get_header().recording_date.strftime(format)}.TRC"
             )
 
     except Exception as e:
