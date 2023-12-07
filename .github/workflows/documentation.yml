@@ -1,0 +1,42 @@
+name: Micromed IO Documentation
+
+on: 
+  push:
+    branches:
+      - master
+
+permissions:
+    contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-20.04
+    env:
+      CONDA_ENV: 'environment.yml'
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    name: build-doc_python-${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: 'mmio'
+          python-version: ${{ matrix.python-version }}
+          environment-file: ${{ env.CONDA_ENV }}
+      - name: Install extra dependencies
+        shell: bash -el {0}
+        run: poetry install --with dev
+      - name: Sphinx build
+        shell: bash -el {0}
+        run: |
+          sphinx-build docs/source docs/build  
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: docs/build/
+          force_orphan: true
