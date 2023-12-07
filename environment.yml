@@ -1,0 +1,7 @@
+name: mmio
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - poetry=1.7.1
+  - python=3.9.12
