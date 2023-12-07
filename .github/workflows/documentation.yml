@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   docs:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       CONDA_ENV: 'environment.yml'
     strategy:
