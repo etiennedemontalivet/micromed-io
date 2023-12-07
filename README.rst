@@ -1,5 +1,5 @@
-Micromed library
-================
+Micromed IO library
+===================
 
 Library to handle Micromed data. Main features:
 

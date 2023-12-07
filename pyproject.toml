@@ -24,6 +24,7 @@ sphinx = "^7.2.6"
 sphinx-copybutton = "^0.5.2"
 numpydoc = "^1.6.0"
 pydata-sphinx-theme = "^0.14.4"
+sphinx-gallery = "^0.15.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

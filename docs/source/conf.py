@@ -14,7 +14,7 @@ from micromed_io import __version__
 
 
 project = "Micromed IO"
-copyright = "2023, Etienne de Montalivet"
+copyright = "2023, Love only"
 author = "Etienne de Montalivet"
 release = __version__
 
@@ -27,11 +27,17 @@ release = __version__
 # poetry add sphinx sphinx-rtd-theme sphinx-copybutton numpydoc
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx_gallery.gen_gallery",
     "sphinx.ext.autosummary",
     "sphinx_copybutton",
     "numpydoc",
     "sphinx.ext.autosectionlabel",
 ]
+
+sphinx_gallery_conf = {
+    "examples_dirs": "../../examples",  # path to your example scripts
+    "gallery_dirs": "_auto_examples",  # path to where to save gallery generated output
+}
 
 # copy code button settings
 copybutton_prompt_text = r">>> |\.\.\. "
