@@ -72,6 +72,7 @@ class MicromedIO:
         self.current_channels = None
         self.notes = {}
         self.note_start_offset = -1
+        self.sfreq = None
 
     def decode_data_header_packet(self, packet: bytearray) -> None:
         """Decode all (but histories) of the micromed header data packet.
@@ -105,6 +106,7 @@ class MicromedIO:
         ]
         self.micromed_header.data_address = self._header["BOData"]
         self.micromed_header.recording_date = self._header["start_time"]
+        self.sfreq = self.micromed_header.min_sampling_rate
 
     # pylint: disable=too-many-branches,too-many-statements
     def decode_data_eeg_packet(
