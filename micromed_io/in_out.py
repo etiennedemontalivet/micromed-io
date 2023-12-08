@@ -107,6 +107,21 @@ class MicromedIO:
         self.micromed_header.data_address = self._header["BOData"]
         self.micromed_header.recording_date = self._header["start_time"]
         self.sfreq = self.micromed_header.min_sampling_rate
+        # Handle notes
+        notes_dict = {}
+        for note_sample, note_val in self._header["notes"]:
+            if note_sample == 0:
+                break
+            notes_dict[note_sample] = note_val.decode("utf-8")
+        self.micromed_header.notes = notes_dict
+
+        # Handle notes
+        markers_dict = {}
+        for marker_sample, marker_val in self._header["trigger"]:
+            if marker_sample == 4294967295 and marker_val == 65535:
+                break
+            markers_dict[marker_sample] = str(marker_val)
+        self.micromed_header.markers = markers_dict
 
     # pylint: disable=too-many-branches,too-many-statements
     def decode_data_eeg_packet(
