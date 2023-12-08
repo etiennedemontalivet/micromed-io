@@ -5,7 +5,6 @@ from typing import List, Union
 
 import mne
 import numpy as np
-from micromed_io.header import MICROMED_ACQ_EQUIPMENT
 from micromed_io.trc import MicromedTRC
 
 
@@ -61,10 +60,8 @@ def create_mne_from_micromed_recording(
     )
     info["device_info"] = {
         "type": "Micromed",
-        "model": MICROMED_ACQ_EQUIPMENT[micromed_trc.micromed_header.acq_unit]
-        if micromed_trc.micromed_header.acq_unit in MICROMED_ACQ_EQUIPMENT
-        else str(micromed_trc.micromed_header.acq_unit),
-        "site": "Unknown",
+        "model": micromed_trc.micromed_header.acq_unit,
+        "site": micromed_trc._header["laboratory"],
     }
     info["subject_info"] = {
         "his_id": micromed_trc.micromed_header.name,

@@ -4,30 +4,6 @@ Contains some description of the micromed header of type 4
 from dataclasses import dataclass
 from datetime import datetime
 
-MICROMED_ACQ_EQUIPMENT = {
-    0: "BQ124 - 24 channels headbox, Internal Interface",
-    1: "MS40 - Holter recorder",
-    2: "BQ132S - 32 channels headbox, Internal Interface",
-    6: "BQ124 - 24 channels headbox, BQ CARD Interface",
-    7: "SAM32 - 32 channels headbox, BQ CARD Interface",
-    8: "SAM25 - 25 channels headbox, BQ CARD Interface",
-    9: "BQ132S R - 32 channels reverse headbox, Internal Interface",
-    10: "SAM32 R - 32 channels reverse headbox, BQ CARD Interface",
-    11: "SAM25 R - 25 channels reverse headbox, BQ CARD Interface",
-    12: "SAM32 - 32 channels headbox, Internal Interface",
-    13: "SAM25 - 25 channels headbox, Internal Interface",
-    14: "SAM32 R - 32 channels reverse headbox, Internal Interface",
-    15: "SAM25 R - 25 channels reverse headbox, Internal Interface",
-    16: "SD - 32 channels headbox with jackbox, SD CARD Interface – PCI Internal Interface",
-    17: "SD128 - 128 channels headbox, SD CARD Interface – PCI Internal Interface",
-    18: "SD96 - 96 channels headbox, SD CARD Interface – PCI Internal Interface",
-    19: "SD64 - 64 channels headbox, SD CARD Interface – PCI Internal Interface",
-    20: "SD128c - 128 channels headbox with jackbox, SD CARD Interface – PCI Internal Interface",
-    21: "SD64c - 64 channels headbox with jackbox, SD CARD Interface – PCI Internal Interface",
-    22: "BQ132S - 32 channels headbox, PCI Internal Interface",
-    23: "BQ132S R - 32 channels reverse headbox, PCI Internal Interface",
-}
-
 
 @dataclass
 class ElectrodeReferences:
@@ -38,12 +14,9 @@ class ElectrodeReferences:
     MicromedHeader
     """
 
-    logic_min: int = None
-    logic_max: int = None
+    factor: float = None  # float(ph_max - ph_min) / float(l_max - l_min + 1)
     logic_ground: int = None
-    phy_min: int = None
-    phy_max: int = None
-    units: int = None
+    units: str = None
 
 
 @dataclass
@@ -135,7 +108,7 @@ class MicromedHeader:
     stored_channels: int = None
     ch_names: list = None
     # elec_refs is a list of electrode references. Dim 2 is
-    # [logic_min, logic_max, logic_ground, phy_min, phy_max, units]
+    # [factor, logic_ground, units]
     elec_refs: list = None
     data_address: int = None
     recording_date: datetime = None

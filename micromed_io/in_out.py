@@ -1,4 +1,8 @@
 """Micromed IO module"""
+#
+# the header parser has been updated to read almost all data thanks to wonambi library:
+# https://wonambi-python.github.io/api/wonambi.ioeeg.micromed.html
+#
 
 from datetime import datetime
 from typing import List
@@ -7,8 +11,15 @@ import numpy as np
 from micromed_io.header import ElectrodeReferences, MicromedHeader
 from datetime import datetime
 from struct import unpack
+from datetime import datetime, date
+from struct import unpack
 
 from numpy import dtype
+
+N_ZONES = 15
+MAX_SAMPLE = 128
+MAX_CAN_VIEW = 128
+ENCODING = "iso-8859-1"
 
 
 class MicromedIO:
@@ -63,174 +74,37 @@ class MicromedIO:
         self.note_start_offset = -1
 
     def decode_data_header_packet(self, packet: bytearray) -> None:
-        """Decode most of the micromed header data packet.
+        """Decode all (but histories) of the micromed header data packet.
 
         Parameters
         ----------
         packet : bytearray
             The header packet to decode.
 
-        Raises
-        ------
-        ValueError
-            If any "fixCode" sent by Micromed is not corresponding (LABCOD, ORDER,...)
-
         """
-        self.micromed_header.surname = packet[64 : (64 + 22)].decode().strip("\x00")
-        self.micromed_header.name = packet[86 : (86 + 20)].decode().strip("\x00")
-        self.micromed_header.acq_unit = int.from_bytes(packet[134:136], "little")
-        self.micromed_header.nb_of_channels = int.from_bytes(packet[142:144], "little")
-        self.micromed_header.min_sampling_rate = int.from_bytes(
-            packet[146:148], "little"
-        )
-        self.sfreq = self.micromed_header.min_sampling_rate
-        self.micromed_header.recording_date = datetime(
-            day=int.from_bytes(packet[128:129], "little"),
-            month=int.from_bytes(packet[129:130], "little"),
-            year=int.from_bytes(packet[130:131], "little") + 1900,
-            hour=int.from_bytes(packet[131:132], "little"),
-            minute=int.from_bytes(packet[132:133], "little"),
-            second=int.from_bytes(packet[133:134], "little"),
-        )
-        self.micromed_header.data_address = int.from_bytes(packet[138:142], "little")
-        self.micromed_header.nb_of_bytes = int.from_bytes(packet[148:150], "little")
-        self.micromed_header.header_type = int.from_bytes(packet[175:176], "little")
-
-        # Check micromed header type (must be 4)
-        if self.micromed_header.header_type != 4:
-            raise ValueError(
-                f"Error: Header is not 4 but {self.micromed_header.header_type}. "
-                + "Parsing is inappropriate."
+        self._header = _read_header(packet)
+        self.micromed_header.surname = self._header["surname"]
+        self.micromed_header.name = self._header["name"]
+        self.micromed_header.nb_of_channels = self._header["n_chan"]
+        self.micromed_header.order = self._header["order"]
+        self.micromed_header.acq_unit = self._header["acquisition_unit"]
+        self.micromed_header.min_sampling_rate = self._header["s_freq"]
+        self.micromed_header.nb_of_bytes = self._header["n_bytes"]
+        self.micromed_header.header_type = self._header["header_type"]
+        self.micromed_header.stored_channels = self._header["order"]
+        self.micromed_header.ch_names = [d["chan_name"] for d in self._header["chans"]]
+        # elec_refs is a list of electrode references. Dim 2 is
+        # [logic_min, logic_max, logic_ground, phy_min, phy_max, units]
+        self.micromed_header.elec_refs = [
+            ElectrodeReferences(
+                factor=d["factor"],
+                logic_ground=d["logical_ground"],
+                units=d["units"],
             )
-
-        # get zones position and length
-        zones = {}
-        for i_zone in range(15):
-            zname, pos, length = unpack(
-                "8sII", packet[176 + i_zone * 16 : 176 + (i_zone + 1) * 16]
-            )
-            zname = zname.decode("iso-8859-1").strip()
-            zones[zname] = pos, length
-
-        # ORDER
-        pos, length = zones["ORDER"]
-        self.micromed_header.order = np.frombuffer(
-            packet[(pos) : (pos + length)],
-            dtype="u2",
-            count=self.micromed_header.nb_of_channels,
-        )
-
-        # Retrieve stored channels name
-        code_start_offset = int.from_bytes(packet[184:188], "little")
-        self.micromed_header.stored_channels = []
-        for iCh in range(self.micromed_header.nb_of_channels):
-            self.micromed_header.stored_channels.append(
-                int.from_bytes(
-                    packet[
-                        code_start_offset + 2 * iCh : code_start_offset + 2 * (iCh + 1)
-                    ],
-                    "little",
-                )
-            )
-        if packet[192 : 192 + 8].decode("utf-8").strip() != "LABCOD":
-            raise ValueError(
-                f"[MICROMED IO] Error: {packet[192 : 192 + 8].decode()} must be equal to 'LABCOD'"
-            )
-        elec_start_offset = int.from_bytes(packet[200:204], "little")
-        self.micromed_header.ch_names = []
-        for iCh in self.micromed_header.stored_channels:
-            pos_elec = (
-                packet[
-                    elec_start_offset
-                    + 128 * iCh
-                    + 2 : elec_start_offset
-                    + 128 * iCh
-                    + 2
-                    + 6
-                ]
-                .decode("utf-8")
-                .strip("\x00")
-            )
-            neg_elec = (
-                packet[
-                    elec_start_offset
-                    + 128 * iCh
-                    + 8 : elec_start_offset
-                    + 128 * iCh
-                    + 8
-                    + 6
-                ]
-                .decode("utf-8")
-                .strip("\x00")
-            )
-            self.micromed_header.ch_names.append(f"{pos_elec}-{neg_elec}")
-
-        # construct the indexes of channels to pick in epoch buffer
-        if self.picks is None:
-            self.picks_id = np.arange(len(self.micromed_header.stored_channels))
-        else:
-            # Check that all channels are pickable
-            for ch in self.picks:
-                if ch not in self.micromed_header.ch_names:
-                    raise ValueError(
-                        f"[MICROMED IO] {ch} is not in "
-                        + f"{self.micromed_header.ch_names}. Please fix it in config.ini file."
-                    )
-            self.picks_id = np.array(
-                [self.micromed_header.ch_names.index(ch) for ch in self.picks],
-                dtype=int,
-            )
-
-        # Extract electrode references for conversion purpose
-        self.micromed_header.elec_refs = []
-        for iCh in self.micromed_header.stored_channels:
-            refs = ElectrodeReferences()
-            start = elec_start_offset + 128 * iCh + 14
-            refs.logic_min = int.from_bytes(
-                packet[start : start + 4], "little", signed=True
-            )
-            refs.logic_max = int.from_bytes(
-                packet[start + 4 : start + 8], "little", signed=True
-            )
-            refs.logic_ground = int.from_bytes(
-                packet[start + 8 : start + 12], "little", signed=True
-            )
-            refs.phy_min = int.from_bytes(
-                packet[start + 12 : start + 16], "little", signed=True
-            )
-            refs.phy_max = int.from_bytes(
-                packet[start + 16 : start + 20], "little", signed=True
-            )
-            refs.units = int.from_bytes(
-                packet[start + 20 : start + 22], "little", signed=True
-            )
-            self.micromed_header.elec_refs.append(refs)
-
-        # MARKERS
-        pos, length = zones["TRIGGER"]
-        dt = dtype([("sample", "u4"), ("code", "u2")])
-        markers = np.frombuffer(
-            packet[pos : pos + length], dtype=dt, count=int(length / dt.itemsize)
-        )
-        markers_dict = {}
-        for marker_sample, marker_val in markers:
-            if marker_sample == 4294967295 and marker_val == 65535:
-                break
-            markers_dict[marker_sample] = str(marker_val)
-        self.micromed_header.markers = markers_dict
-
-        # NOTES
-        pos, length = zones["NOTE"]
-        dt = dtype([("sample", "u4"), ("text", "S40")])
-        notes = np.frombuffer(
-            packet[pos : pos + length], dtype=dt, count=int(length / dt.itemsize)
-        )
-        notes_dict = {}
-        for note_sample, note_val in notes:
-            if note_sample == 0:
-                break
-            notes_dict[note_sample] = note_val.decode("utf-8")
-        self.micromed_header.notes = notes_dict
+            for d in self._header["chans"]
+        ]
+        self.micromed_header.data_address = self._header["BOData"]
+        self.micromed_header.recording_date = self._header["start_time"]
 
     # pylint: disable=too-many-branches,too-many-statements
     def decode_data_eeg_packet(
@@ -307,34 +181,32 @@ class MicromedIO:
                 if keep_raw is True:
                     reshaped_data.append(np.take(raw_values, t + i))
                 else:
-                    logic_min = self.micromed_header.elec_refs[i].logic_min
-                    logic_max = self.micromed_header.elec_refs[i].logic_max
+                    factor = self.micromed_header.elec_refs[i].factor
                     logic_ground = self.micromed_header.elec_refs[i].logic_ground
-                    phy_min = self.micromed_header.elec_refs[i].phy_min
-                    phy_max = self.micromed_header.elec_refs[i].phy_max
-                    loc = (phy_max - phy_min) / (logic_max - logic_min + 1)
+
                     if use_volt is True:
                         unit = self.micromed_header.elec_refs[i].units
                         ratio = 0
-                        if unit == -1:
+                        if unit == "nV":
                             ratio = 1e-9
-                        elif unit == 0:
+                        elif unit == "µV":
                             ratio = 1e-6
-                        elif unit == 1:
+                        elif unit == "mV":
                             ratio = 1e-3
-                        elif unit == 2:
+                        elif unit == "V":
                             ratio = 1
                         else:
                             raise ValueError(
                                 f"Cannot convert data to Volts. unit is inappropriate: {unit}."
                             )
-                        loc *= ratio
+                        factor *= ratio
                     reshaped_data.append(
                         np.multiply(
                             np.subtract(
-                                np.take(raw_values, t + i).astype(int), logic_ground
+                                np.take(raw_values, t + i).astype(int),
+                                logic_ground,
                             ),
-                            loc,
+                            factor,
                         )
                     )
 
@@ -376,3 +248,335 @@ class MicromedIO:
             logging.warning("MKR channel(s) is not close to 50mV")
 
         return success
+
+
+def _read_header(f):
+    i_b = 0  # where
+    orig = {}
+
+    orig["title"] = f[:32].decode(ENCODING).strip()
+    i_b += 32
+    orig["laboratory"] = f[i_b : i_b + 32].strip(b"\x00").decode(ENCODING).strip()
+    i_b += 32
+
+    # patient
+    orig["surname"] = f[i_b : i_b + 22].decode(ENCODING).strip()
+    i_b += 22
+    orig["name"] = f[i_b : i_b + 20].decode(ENCODING).strip()
+    i_b += 20
+    month, day, year = unpack("bbb", f[i_b : i_b + 3])
+    i_b += 3
+    try:
+        orig["date_of_birth"] = date(year + 1900, month, day)
+    except ValueError:
+        orig["date_of_birth"] = None
+    i_b += 19
+
+    # recording
+    day, month, year, hour, minute, sec = unpack("bbbbbb", f[i_b : i_b + 6])
+    i_b += 6
+    orig["start_time"] = datetime(year + 1900, month, day, hour, minute, sec)
+
+    acquisition_unit_code = unpack("h", f[i_b : i_b + 2])[0]
+    i_b += 2
+    orig["acquisition_unit"] = ACQUISITION_UNIT.get(
+        acquisition_unit_code, str(acquisition_unit_code)
+    )
+    filetype_code = unpack("H", f[i_b : i_b + 2])[0]
+    i_b += 2
+    orig["filetype"] = FILETYPE.get(filetype_code, "unknown headbox")
+
+    orig["BOData"] = unpack("I", f[i_b : i_b + 4])[0]
+    i_b += 4
+    orig["n_chan"] = unpack("H", f[i_b : i_b + 2])[0]
+    i_b += 2
+    orig["multiplexer"] = unpack("H", f[i_b : i_b + 2])[0]
+    i_b += 2
+    orig["s_freq"] = unpack("H", f[i_b : i_b + 2])[0]
+    i_b += 2
+    orig["n_bytes"] = unpack("H", f[i_b : i_b + 2])[0]
+    i_b += 2
+    orig["compression"] = unpack("H", f[i_b : i_b + 2])[0]
+    i_b += 2  # 0 non compression, 1 compression.
+    orig["n_montages"] = unpack("H", f[i_b : i_b + 2])[0]
+    i_b += 2  # Montages : number of specific montages
+    orig["dvideo_begin"] = unpack("I", f[i_b : i_b + 4])[0]
+    i_b += 4  # Starting sample of digital video
+    orig["mpeg_delay"] = unpack("H", f[i_b : i_b + 2])[0]
+    i_b += 2  # Number of frames per hour of de-synchronization in MPEG acq
+
+    i_b += 15
+    header_type_code = unpack("b", f[i_b : i_b + 1])[0]
+    i_b += 1
+    orig["header_type"] = HEADER_TYPE[header_type_code]
+
+    zones = {}
+    for _ in range(N_ZONES):
+        zname, pos, length = unpack("8sII", f[i_b : i_b + 16])
+        i_b += 16
+        zname = zname.decode(ENCODING).strip()
+        zones[zname] = pos, length
+
+    pos, length = zones["ORDER"]
+    order = np.frombuffer(f[pos:], dtype="u2", count=orig["n_chan"])
+
+    chans = _read_labcod(f, zones["LABCOD"], order)
+
+    pos, length = zones["NOTE"]
+    DTYPE = dtype([("sample", "u4"), ("text", "S40")])
+    notes = np.frombuffer(f[pos:], dtype=DTYPE, count=int(length / DTYPE.itemsize))
+
+    pos, length = zones["FLAGS"]
+    DTYPE = dtype([("begin", "u4"), ("end", "u4")])
+    flags = np.frombuffer(f[pos:], dtype=DTYPE, count=int(length / DTYPE.itemsize))
+
+    pos, length = zones["TRONCA"]
+    DTYPE = dtype([("time_in_samples", "u4"), ("sample", "u4")])
+    segments = np.frombuffer(f[pos:], dtype=DTYPE, count=int(length / DTYPE.itemsize))
+
+    # impedance
+    DTYPE = dtype([("positive", "u1"), ("negative", "u1")])
+    pos, length = zones["IMPED_B"]
+    impedance_begin = np.frombuffer(
+        f[pos:], dtype=DTYPE, count=int(length / DTYPE.itemsize)
+    )
+
+    pos, length = zones["IMPED_E"]
+    impedance_end = np.frombuffer(
+        f[pos:], dtype=DTYPE, count=int(length / DTYPE.itemsize)
+    )
+
+    montage = _read_montage(f, zones["MONTAGE"])
+
+    # if average has been computed
+    pos, length = zones["COMPRESS"]
+    i_b = pos
+    avg = {}
+    avg["trace"], avg["file"], avg["prestim"], avg["poststim"], avg["type"] = unpack(
+        "IIIII", f[i_b : i_b + 5 * 4]
+    )
+    i_b += 5 * 4
+    avg["free"] = f[i_b : i_b + 108].strip(b"\x01\x00")
+    i_b += 108
+
+    # history = _read_history(f, zones["HISTORY"])
+
+    pos, length = zones["DVIDEO"]
+    i_b = pos
+    DTYPE = dtype(
+        [("delay", "i4"), ("duration", "u4"), ("file_ext", "u4"), ("empty", "u4")]
+    )
+    dvideo = np.frombuffer(f, dtype=DTYPE, count=int(length / DTYPE.itemsize))
+
+    # events
+    DTYPE = dtype([("code", "u4"), ("begin", "u4"), ("end", "u4")])
+    pos, length = zones["EVENT A"]
+    event_a = np.frombuffer(f[pos:], dtype=DTYPE, count=int(length / DTYPE.itemsize))
+
+    pos, length = zones["EVENT B"]
+    event_b = np.frombuffer(f[pos:], dtype=DTYPE, count=int(length / DTYPE.itemsize))
+
+    pos, length = zones["TRIGGER"]
+    DTYPE = dtype([("sample", "u4"), ("code", "u2")])
+    trigger = np.frombuffer(f[pos:], dtype=DTYPE, count=int(length / DTYPE.itemsize))
+
+    orig.update(
+        {
+            "order": order,
+            "chans": chans,
+            "notes": notes,
+            "flags": flags,
+            "segments": segments,
+            "impedance_begin": impedance_begin,
+            "impedance_end": impedance_end,
+            "montage": montage,
+            # "history": history,
+            "dvideo": dvideo,
+            "event_a": event_a,
+            "event_b": event_b,
+            "trigger": trigger,
+        }
+    )
+
+    return orig
+
+
+ACQUISITION_UNIT = {
+    0: "BQ124 - 24 channels headbox, Internal Interface",
+    2: "MS40 - Holter recorder",
+    6: "BQ132S - 32 channels headbox, Internal Interface",
+    7: "BQ124 - 24 channels headbox, BQ CARD Interface",
+    8: "SAM32 - 32 channels headbox, BQ CARD Interface",
+    9: "SAM25 - 25 channels headbox, BQ CARD Interface",
+    10: "BQ132S R - 32 channels reverse headbox, Internal Interface",
+    11: "SAM32 R - 32 channels reverse headbox, BQ CARD Interface",
+    12: "SAM25 R - 25 channels reverse headbox, BQ CARD Interface",
+    13: "SAM32 - 32 channels headbox, Internal Interface",
+    14: "SAM25 - 25 channels headbox, Internal Interface",
+    15: "SAM32 R - 32 channels reverse headbox, Internal Interface",
+    16: "SAM25 R - 25 channels reverse headbox, Internal Interface",
+    17: "SD - 32 channels headbox with jackbox, SD CARD Interface -- PCI Internal Interface",
+    18: "SD128 - 128 channels headbox, SD CARD Interface -- PCI Internal Interface",
+    19: "SD96 - 96 channels headbox, SD CARD Interface -- PCI Internal Interface",
+    20: "SD64 - 64 channels headbox, SD CARD Interface -- PCI Internal Interface",
+    21: "SD128c - 128 channels headbox with jackbox, SD CARD Interface -- PCI Internal Interface",
+    22: "SD64c - 64 channels headbox with jackbox, SD CARD Interface -- PCI Internal Interface",
+    23: "BQ132S - 32 channels headbox, PCI Internal Interface",
+    24: "BQ132S R - 32 channels reverse headbox, PCI Internal Interface",
+}
+
+FILETYPE = {
+    40: "C128 C.R., 128 EEG (headbox SD128 only)",
+    42: "C84P C.R., 84 EEG, 44 poly (headbox SD128 only)",
+    44: "C84 C.R., 84 EEG, 4 reference signals (named MKR,MKRB,MKRC,MKRD) (headbox SD128 only)",
+    46: "C96 C.R., 96 EEG (headbox SD128 -- SD96 -- BQ123S(r))",
+    48: "C63P C.R., 63 EEG, 33 poly",
+    50: "C63 C.R., 63 EEG, 3 reference signals (named MKR,MKRB,MKRC)",
+    52: "C64 C.R., 64 EEG",
+    54: "C42P C.R., 42 EEG, 22 poly",
+    56: "C42 C.R., 42 EEG, 2 reference signals (named MKR,MKRB)",
+    58: "C32 C.R., 32 EEG",
+    60: "C21P C.R., 21 EEG, 11 poly",
+    62: "C21 C.R., 21 EEG, 1 reference signal (named MKR)",
+    64: "C19P C.R., 19 EEG, variable poly",
+    66: "C19 C.R., 19 EEG, 1 reference signal (named MKR)",
+    68: "C12 C.R., 12 EEG",
+    70: "C8P C.R., 8 EEG, variable poly",
+    72: "C8 C.R., 8 EEG",
+    74: "CFRE C.R., variable EEG, variable poly",
+    76: "C25P C.R., 25 EEG (21 standard, 4 poly transformed to EEG channels), 7 poly -- headbox BQ132S(r) only",
+    78: "C27P C.R., 27 EEG (21 standard, 6 poly transformed to EEG channels), 5 poly -- headbox BQ132S(r) only",
+    80: "C24P C.R., 24 EEG (21 standard, 3 poly transformed to EEG channels), 8 poly -- headbox SAM32(r) only",
+    82: "C25P C.R., 25 EEG (21 standard, 4 poly transformed to EEG channels), 7 poly -- headbox SD with headbox JB 21P",
+    84: "C27P C.R., 27 EEG (21 standard, 6 poly transformed to EEG channels), 5 poly -- headbox SD with headbox JB 21P",
+    86: "C31P C.R., 27 EEG (21 standard, 10 poly transformed to EEG channels), 1 poly -- headbox SD with headbox JB 21P6",
+    100: "C26P C.R., 26 EEG, 6 poly (headbox SD, SD64c, SD128c with headbox JB Mini)",
+    101: "C16P C.R., 16 EEG, 16 poly (headbox SD with headbox JB M12)",
+    102: "C12P C.R., 12 EEG, 20 poly (headbox SD with headbox JB M12)",
+    103: "32P 32 poly (headbox SD, SD64c, SD128c with headbox JB Bip)",
+    120: "C48P C.R., 48 EEG, 16 poly (headbox SD64)",
+    121: "C56P C.R., 56 EEG, 8 poly (headbox SD64)",
+    122: "C24P C.R., 24 EEG, 8 poly (headbox SD64)",
+    140: "C52P C.R., 52 EEG, 12 poly (headbox SD64c, SD128c with 2 headboxes JB Mini)",
+    141: "64P 64 poly (headbox SD64c, SD128c with 2 headboxes JB Bip)",
+    160: "C88P C.R., 88 EEG, 8 poly (headbox SD96)",
+    161: "C80P C.R., 80 EEG, 16 poly (headbox SD96)",
+    162: "C72P C.R., 72 EEG, 24 poly (headbox SD96)",
+    180: "C120P C.R., 120 EEG, 8 poly (headbox SD128)",
+    181: "C112P C.R., 112 EEG, 16 poly (headbox SD128)",
+    182: "C104P C.R., 104 EEG, 24 poly (headbox SD128)",
+    183: "C96P C.R., 96 EEG, 32 poly (headbox SD128)",
+    200: "C122P C.R., 122 EEG, 6 poly (headbox SD128c with 4 headboxes JB Mini)",
+    201: "C116P C.R., 116 EEG, 12 poly (headbox SD128c with 4 headboxes JB Mini)",
+    202: "C110P C.R., 110 EEG, 18 poly (headbox SD128c with 4 headboxes JB Mini)",
+    203: "C104P C.R., 104 EEG, 24 poly (headbox SD128c with 4 headboxes JB Mini)",
+    204: "128P 128 poly (headbox SD128c with 4 headboxes JB Bip)",
+    205: "96P 96 poly (headbox SD128c with 3 headboxes JB Bip)",
+}
+
+HEADER_TYPE = {
+    0: 'Micromed "System 1" Header type',
+    1: 'Micromed "System 1" Header type',
+    2: 'Micromed "System 2" Header type',
+    3: 'Micromed "System98" Header type',
+    4: 'Micromed "System98" Header type',
+}
+
+UNITS = {
+    -1: "nV",
+    0: "μV",
+    1: "mV",
+    2: "V",
+    100: "%",
+    101: "bpm",
+    102: "dimentionless",
+}
+
+
+def _read_labcod(f, zone, order):
+    pos, length = zone
+    CHAN_LENGTH = 128
+
+    chans = []
+
+    for i_ch in order:
+        chan = {}
+
+        i_b = pos + i_ch * CHAN_LENGTH
+
+        chan["status"] = f[i_b : i_b + 1]
+        i_b += 1  # Status of electrode for acquisition : 0 : not acquired, 1 : acquired
+        chan["channelType"] = f[i_b : i_b + 1]
+        i_b += 1  # TODO: type of reference
+
+        chan["chan_name"] = f[i_b : i_b + 6].strip(b"\x01\x00").decode(ENCODING)
+        i_b += 6
+        chan["ground"] = f[i_b : i_b + 6].strip(b"\x01\x00").decode(ENCODING)
+        i_b += 6
+        l_min, l_max, chan["logical_ground"], ph_min, ph_max = unpack(
+            "iiiii", f[i_b : i_b + 20]
+        )
+        i_b += 20
+        chan["factor"] = float(ph_max - ph_min) / float(l_max - l_min + 1)
+
+        k = unpack("h", f[i_b : i_b + 2])[0]
+        i_b += 2
+        chan["units"] = UNITS.get(k, UNITS[0])
+
+        chan["HiPass_Limit"], chan["HiPass_Type"] = unpack("HH", f[i_b : i_b + 4])
+        i_b += 4
+        chan["LowPass_Limit"], chan["LowPass_Type"] = unpack("HH", f[i_b : i_b + 4])
+        i_b += 4
+
+        chan["rate_coefficient"], chan["position"] = unpack("HH", f[i_b : i_b + 4])
+        i_b += 4
+        chan["Latitude"], chan["Longitude"] = unpack("ff", f[i_b : i_b + 8])
+        i_b += 8
+        chan["presentInMap"] = unpack("B", f[i_b : i_b + 1])[0]
+        i_b += 1
+        chan["isInAvg"] = unpack("B", f[i_b : i_b + 1])[0]
+        i_b += 1
+        chan["Description"] = f[i_b : i_b + 32].strip(b"\x01\x00").decode(ENCODING)
+        i_b += 32
+        chan["xyz"] = unpack("fff", f[i_b : i_b + 12])
+        i_b += 12
+        chan["Coordinate_Type"] = unpack("H", f[i_b : i_b + 2])[0]
+        i_b += 2
+        chan["free"] = f[i_b : i_b + 24].strip(b"\x01\x00")
+        i_b += 24
+
+        chans.append(chan)
+
+    return chans
+
+
+def _read_montage(f, zone):
+    pos, length = zone
+    i_b = pos
+
+    montages = []
+
+    while i_b < (pos + length):
+        montage = {
+            "lines": unpack("H", f[i_b : i_b + 2])[0],
+            "sectors": unpack("H", f[i_b + 2 : i_b + 4])[0],
+            "base_time": unpack("H", f[i_b + 4 : i_b + 6])[0],
+            "notch": unpack("H", f[i_b + 6 : i_b + 8])[0],
+            "colour": unpack(MAX_CAN_VIEW * "B", f[i_b + 8 : i_b + 136]),
+            "selection": unpack(MAX_CAN_VIEW * "B", f[i_b + 136 : i_b + 264]),
+            "description": f[i_b + 264 : i_b + 328].strip(b"\x01\x00").decode(ENCODING),
+            "inputsNonInv": unpack(
+                MAX_CAN_VIEW * "H", f[i_b + 328 : i_b + 584]
+            ),  # NonInv : non inverting input
+            "inputsInv": unpack(
+                MAX_CAN_VIEW * "H", f[i_b + 584 : i_b + 840]
+            ),  # Inv : inverting input
+            "HiPass_Filter": unpack(MAX_CAN_VIEW * "I", f[i_b + 840 : i_b + 1352]),
+            "LowPass_Filter": unpack(MAX_CAN_VIEW * "I", f[i_b + 1352 : i_b + 1864]),
+            "reference": unpack(MAX_CAN_VIEW * "I", f[i_b + 1864 : i_b + 2376]),
+            "free": f[i_b + 2376 : i_b + 4096].strip(b"\x01\x00"),
+        }
+        i_b += 4096
+        montages.append(montage)
+
+    return montages
