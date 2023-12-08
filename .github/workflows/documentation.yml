@@ -20,6 +20,8 @@ jobs:
     name: build-doc_python-${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: true
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: 'mmio'
