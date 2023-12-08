@@ -1,7 +1,10 @@
 Micromed IO library
 ===================
 
-Library to handle Micromed data. Main features:
+A library to read, emulate, and forward Micromed data in standard formats. See 
+`online doc <https://etiennedemontalivet.github.io/micromed-io/>`__.
+
+Main features:
 
 -  simulate online data from a trc file
 -  push online tcp data to LSL server
@@ -152,11 +155,5 @@ Download the repo and:
    conda activate mmio
    poetry install
 
-TODO
-----
-
--  ☒ Include serial markers parsing
--  ☐ Parse all info from Micromed header
--  ☒ Emulate serial markers + notes
 
 Please feel free to reach me if you want to contribute.
