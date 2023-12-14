@@ -16,7 +16,7 @@ Install
 
 .. code:: bash
 
-   pip install micromed-io
+   $ pip install micromed-io
 
 
 Convert a Micromed (*.trc*) file to MNE (*.fif*) format
@@ -33,7 +33,7 @@ Emulate Online Micromed TCP from *.trc* file
 
 .. code:: bash
 
-   mmio_emulate_trc --file=../data/sample.TRC --address=localhost --port=5123
+   $ mmio_emulate_trc --file=../data/sample.TRC --address=localhost --port=5123
 
 
 Emulate the online data stream of Micromed to test your real-time
@@ -42,7 +42,7 @@ platform. See all the arguments and adapt them:
 
 .. code:: bash
 
-   mmio_emulate_trc --help # to see all arguments
+   $ mmio_emulate_trc --help # to see all arguments
 
 .. note::
 
@@ -55,7 +55,7 @@ Read TCP and push to LSL Stream
 
 .. code:: bash
 
-   mmio_tcp_to_lsl --address=localhost --port=5123
+   $ mmio_tcp_to_lsl --address=localhost --port=5123
 
 While receiving online data throug tcp, this command forward the data to
 3 LSL stream outlets:
@@ -71,7 +71,7 @@ You can easily change the LSL parameters:
 
 .. code:: bash
 
-   mmio_tcp_to_lsl --help # to see all arguments
+   $ mmio_tcp_to_lsl --help # to see all arguments
 
 
 Read TRC file
@@ -105,7 +105,7 @@ repo <https://github.com/etiennedemontalivet/micromed-io>`__ in
 
 .. code:: bash
 
-   python tcp_to_lsl.py --address=localhost --port=5123
+   $ python tcp_to_lsl.py --address=localhost --port=5123
 
 ..
 
@@ -133,7 +133,7 @@ Rename TRC files with recording datetime
 
 .. code:: bash
 
-   mmio_rename_trc --dirpath=./ --format=%Y%m%d-%H%M%S
+   $ mmio_rename_trc --dirpath=./ --format=%Y%m%d-%H%M%S
 
 Rename the TRC files of the given folder to include the recording date
 in the filename. Output is : ``<filename>__<recording_date>.TRC``. The
@@ -151,9 +151,9 @@ Download the repo and:
 
 .. code:: bash
 
-   conda env create -f environment.yml
-   conda activate mmio
-   poetry install
+   $ conda env create -f environment.yml
+   $ conda activate mmio
+   $ poetry install
 
 
 Please feel free to reach me if you want to contribute.
