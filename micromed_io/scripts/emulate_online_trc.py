@@ -4,8 +4,8 @@ Emulate from a TRC file Micromed sending data through TCP.
 Note: The server must be launched before.
 
 HOW TO USE:
-> python emulate_trc_tcpip.py --help
-> python emulate_trc_tcpip.py --file=../data/sample.TRC
+> python emulate_online_trc.py --help
+> python emulate_online_trc.py --file=../data/sample.TRC
 """
 import logging
 import socket
@@ -106,7 +106,8 @@ def run(
             sock.connect(server_address)
             is_not_connected = False
         except Exception as e:
-            logging.warning(e)
+            logging.warning(f"{e}. Waiting 2s before retrying")
+            time.sleep(2)
 
     # some general variables
     sample_length = (
