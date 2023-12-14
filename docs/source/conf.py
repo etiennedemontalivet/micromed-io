@@ -40,7 +40,7 @@ sphinx_gallery_conf = {
 }
 
 # copy code button settings
-copybutton_prompt_text = r">>> |\.\.\. "
+copybutton_prompt_text = r">>> |\.\.\. |\$ "
 copybutton_prompt_is_regexp = True
 copybutton_line_continuation_character = "\n"
 
