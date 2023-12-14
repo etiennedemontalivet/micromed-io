@@ -4,13 +4,14 @@ Read data sent by Micromed through TCP.
 import logging
 import socket
 from datetime import datetime
+from typing import Tuple
 
 import click
 import numpy as np
 import pylsl
 
-from micromed_io.in_out import MicromedHeader, MicromedIO
 import micromed_io.tcp as mmio_tcp
+from micromed_io.in_out import MicromedHeader, MicromedIO
 
 
 def recvall(sock, n):
@@ -35,7 +36,7 @@ def init_lsl(
     lsl_notes_name: str = "Micromed_Notes",
     lsl_notes_type: str = "Markers",
     lsl_notes_source_id: str = "micromed_notes",
-) -> (pylsl.StreamOutlet, pylsl.StreamOutlet):
+) -> Tuple[pylsl.StreamOutlet, pylsl.StreamOutlet]:
     """Initializes the Labstreaming Layer outlet with the Micromed Header information"""
     # data outlet
     info = pylsl.StreamInfo(
@@ -221,7 +222,8 @@ def run(
     previous_eeg_packet_time = datetime.now()
 
     while True:
-        # Create a TCP/IP socket
+        # Create a IPv4 based (AF_INET) TCP (SOCK_STREAM) connection
+        # https://docs.python.org/3/library/socket.html#example
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # Bind the socket to the port
@@ -246,8 +248,6 @@ def run(
 
         sock.settimeout(None)
 
-        lsl_eeg_outlet = None
-        lsl_markers_outlet = None
         # create micromed
         micromed_io = MicromedIO()
         try:
@@ -289,26 +289,23 @@ def run(
                         if not micromed_io.decode_data_eeg_packet(b_data):
                             logging.error("Error in EEG data packet")
                         # forward to lsl
-                        if lsl_eeg_outlet is not None:
-                            # send to lsl
-                            lsl_eeg_outlet.push_chunk(
-                                np.ascontiguousarray(
-                                    micromed_io.current_data_eeg.T.astype("float32")
-                                )
+                        lsl_eeg_outlet.push_chunk(
+                            np.ascontiguousarray(
+                                micromed_io.current_data_eeg.T.astype("float32")
                             )
-
-                            # log only
-                            if (
-                                verbosity >= 1
-                                and (
-                                    datetime.now() - previous_eeg_packet_time
-                                ).total_seconds()
-                                > 1
-                            ):  # don't bother user too much - wait 2 sec between 2 logs
-                                previous_eeg_packet_time = datetime.now()
-                                logging.debug(
-                                    f"Receiving TCP packet - LSL Sending chunk of size {micromed_io.current_data_eeg.T.shape}"
-                                )
+                        )
+                        # log only
+                        if (
+                            verbosity >= 1
+                            and (
+                                datetime.now() - previous_eeg_packet_time
+                            ).total_seconds()
+                            > 1
+                        ):  # don't bother user too much - wait 2 sec between 2 logs
+                            previous_eeg_packet_time = datetime.now()
+                            logging.debug(
+                                f"Receiving TCP packet - LSL Sending chunk of size {micromed_io.current_data_eeg.T.shape}"
+                            )
                         # log only
                         if verbosity >= 2:
                             logging.info(
