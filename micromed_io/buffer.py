@@ -162,6 +162,6 @@ class MicromedBuffer(MicromedIO):
             self.epoch_buffer[
                 :, n_overlaping_samples : (n_overlaping_samples + over_size)
             ] = np.copy(self.current_data_eeg[self.picks_id, remaining_size:])
-            self.current_buffer_length = over_size
+            self.current_buffer_length = over_size + n_overlaping_samples
 
         return has_new_epoch

@@ -94,6 +94,23 @@ class MicromedIO:
         self.micromed_header.header_type = self._header["header_type"]
         self.micromed_header.stored_channels = self._header["order"]
         self.micromed_header.ch_names = [d["chan_name"] for d in self._header["chans"]]
+
+        # construct the indexes of channels to pick in epoch buffer
+        if self.picks is None:
+            self.picks_id = np.arange(len(self.micromed_header.stored_channels))
+        else:
+            # Check that all channels are pickable
+            for ch in self.picks:
+                if ch not in self.micromed_header.ch_names:
+                    raise ValueError(
+                        f"[MICROMED IO] {ch} is not in "
+                        + f"{self.micromed_header.ch_names}. Please fix it in config.ini file."
+                    )
+            self.picks_id = np.array(
+                [self.micromed_header.ch_names.index(ch) for ch in self.picks],
+                dtype=int,
+            )
+
         # elec_refs is a list of electrode references. Dim 2 is
         # [logic_min, logic_max, logic_ground, phy_min, phy_max, units]
         self.micromed_header.elec_refs = [
