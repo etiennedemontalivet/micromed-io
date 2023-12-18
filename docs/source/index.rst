@@ -12,11 +12,3 @@
    _auto_examples/index
    api
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

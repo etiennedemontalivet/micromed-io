@@ -28,6 +28,14 @@ Convert a Micromed (*.trc*) file to MNE (*.fif*) format
    mne_raw = create_mne_from_micromed_recording("path/to/file.TRC")
 
 
+Emulate TRC to TCP & read/forward to LSL server
+------------------------------------------------
+See details in next sections
+
+.. image:: https://raw.githubusercontent.com/etiennedemontalivet/micromed-io/master/docs/source/data/mmio_server.gif
+   :alt: StreamPlayer
+   :align: center
+
 Emulate Online Micromed TCP from *.trc* file
 --------------------------------------------
 
