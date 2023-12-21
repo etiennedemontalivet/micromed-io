@@ -51,7 +51,7 @@ class MicromedHeader:
     stored_channels: int, optional
         Number of stored channels in EEGs data.
     ch_names: list, optional
-        The channel names.
+        The channel names in format "<ch name>-<ground>".
     elec_refs: List[ElectrodeReferences], optional
         A list of electrode references.
     data_address: int, optional
@@ -82,7 +82,7 @@ class MicromedHeader:
     stored_channels: int
         Number of stored channels in EEGs data.
     ch_names: list
-        The channel names.
+        The channel names in format "<ch name>-<ground>".
     elec_refs: List[ElectrodeReferences]
         A list of electrode references.
     data_address: int

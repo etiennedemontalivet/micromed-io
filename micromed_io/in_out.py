@@ -4,17 +4,15 @@
 # https://wonambi-python.github.io/api/wonambi.ioeeg.micromed.html
 #
 
-from datetime import datetime
-from typing import List
 import logging
-import numpy as np
-from micromed_io.header import ElectrodeReferences, MicromedHeader
-from datetime import datetime
+from datetime import date, datetime
 from struct import unpack
-from datetime import datetime, date
-from struct import unpack
+from typing import List
 
+import numpy as np
 from numpy import dtype
+
+from micromed_io.header import ElectrodeReferences, MicromedHeader
 
 N_ZONES = 15
 MAX_SAMPLE = 128
@@ -93,7 +91,9 @@ class MicromedIO:
         self.micromed_header.nb_of_bytes = self._header["n_bytes"]
         self.micromed_header.header_type = self._header["header_type"]
         self.micromed_header.stored_channels = self._header["order"]
-        self.micromed_header.ch_names = [d["chan_name"] for d in self._header["chans"]]
+        self.micromed_header.ch_names = [
+            f"{d['chan_name']}-{d['ground']}" for d in self._header["chans"]
+        ]
 
         # construct the indexes of channels to pick in epoch buffer
         if self.picks is None:
