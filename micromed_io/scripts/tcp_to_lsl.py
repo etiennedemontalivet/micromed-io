@@ -126,6 +126,14 @@ def init_lsl(
     show_default=True,
 )
 @click.option(
+    "--online",
+    default=False,
+    type=bool,
+    required=False,
+    help="If true, then speed is optimized",
+    show_default=False,
+)
+@click.option(
     "--lsl-eeg-name",
     default="Micromed",
     type=str,
@@ -200,6 +208,7 @@ def init_lsl(
 def run(
     address: str = "localhost",
     port: int = 5123,
+    online: bool = False,
     lsl_eeg_name: str = "Micromed",
     lsl_eeg_type: str = "EEG",
     lsl_eeg_source_id: str = "micromed_eeg",
@@ -286,7 +295,9 @@ def run(
                         )
 
                     elif packet_type == mmio_tcp.MicromedPacketType.EEG_DATA:
-                        if not micromed_io.decode_data_eeg_packet(b_data):
+                        if not micromed_io.decode_data_eeg_packet(
+                            b_data, check_data=not (online)
+                        ):
                             logging.error("Error in EEG data packet")
                         # forward to lsl
                         lsl_eeg_outlet.push_chunk(

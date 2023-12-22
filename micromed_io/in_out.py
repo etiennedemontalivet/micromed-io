@@ -147,6 +147,7 @@ class MicromedIO:
         picks: List = None,
         keep_raw: bool = False,
         use_volt: bool = False,
+        check_data: bool = True,
     ) -> bool:
         """Decode eeg data packet.
         Conversion is made to get physiological value of eegs.
@@ -163,6 +164,9 @@ class MicromedIO:
         use_volt : bool, optional
             If True, the data is scaled to Volts. If False, whatever unit is used by Micromed.
             Note that you may loose resolution by doing that. The default is False.
+        check_data: bool, optional
+            Check if MKR channel(s) is close to 50mV. If not, return False. You can disable
+            for speed performances.
 
         Returns
         -------
@@ -181,11 +185,15 @@ class MicromedIO:
 
         ``self.current_data_eeg`` is always ordered regarding the order of the channels
         in self.micromed_header.ch_names
+
+        If a marker is sent through serial port, MKR channel(s) is not close to 50mV. The warning should
+        then be ignored.
         """
 
         packet_size = len(packet)
         n_bytes = self.micromed_header.nb_of_bytes
         nb_of_channels = self.micromed_header.nb_of_channels
+        is_well_extracted = True
 
         if picks is None:
             picks = self.micromed_header.ch_names
@@ -199,11 +207,12 @@ class MicromedIO:
 
         # MKR+MKR- is used to double check extraction/parsing of data
         # if it is not in picks, we add it temporary
-        orig_picks = picks.copy()
-        mkr_channels = [ch for ch in self.micromed_header.ch_names if "MKR" in ch]
-        for ch in mkr_channels:
-            if ch not in picks:
-                picks.append(ch)
+        if check_data is True:
+            orig_picks = picks.copy()
+            mkr_channels = [ch for ch in self.micromed_header.ch_names if "MKR" in ch]
+            for ch in mkr_channels:
+                if ch not in picks:
+                    picks.append(ch)
 
         raw_values = np.frombuffer(packet, dtype=dt)
         nb_of_samples = int(packet_size // n_bytes // nb_of_channels)
@@ -246,19 +255,19 @@ class MicromedIO:
 
         self.current_data_eeg = np.array(reshaped_data)
         self.current_channels = picks
-        if keep_raw is True:
-            is_well_extracted = True
-        else:
+
+        # check data and remove mkr channels if not selected
+        if check_data is True:
             is_well_extracted = self._check_eegs_data(mkr_channels)
 
-        for ch in mkr_channels:
-            if ch not in orig_picks:
-                self.current_data_eeg = np.delete(
-                    self.current_data_eeg,
-                    (self.current_channels.index(ch)),
-                    axis=0,
-                )
-                self.current_channels.remove(ch)
+            for ch in mkr_channels:
+                if ch not in orig_picks:
+                    self.current_data_eeg = np.delete(
+                        self.current_data_eeg,
+                        (self.current_channels.index(ch)),
+                        axis=0,
+                    )
+                    self.current_channels.remove(ch)
 
         return is_well_extracted
 
@@ -268,7 +277,7 @@ class MicromedIO:
         Returns
         -------
         bool
-            True if MKR+-MKR- channel absolute values are close to 50 (µV). Else False.
+            True if MKR+-MKR- channel absolute values are close to 50 (mV). Else False.
         """
         success = True
         for ch in mkr_channels:
@@ -279,7 +288,9 @@ class MicromedIO:
             ):
                 success = False
         if not success:
-            logging.warning("MKR channel(s) is not close to 50mV")
+            logging.warning(
+                "MKR channel(s) is not close to 50mV. If no trigger received, then data are corrupted."
+            )
 
         return success
 
