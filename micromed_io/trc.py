@@ -90,12 +90,11 @@ class MicromedTRC(MicromedIO):
             Note that you may lose resolution by doing that. The default is False.
 
         """
-        if start > 0:
-            start_address = int(
-                start
-                * self.micromed_header.nb_of_bytes
-                * self.micromed_header.nb_of_channels
-            )
+        start_address = int(
+            start
+            * self.micromed_header.nb_of_bytes
+            * self.micromed_header.nb_of_channels
+        )
         packet_size = None
         if stop is not None:
             packet_size = int(
