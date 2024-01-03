@@ -3,15 +3,15 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import os
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 import sys
-import os
 
 sys.path.insert(0, os.path.abspath("../.."))
 
 from micromed_io import __version__
-
 
 project = "Micromed IO"
 copyright = "2023, Love only"
@@ -68,6 +68,17 @@ source_suffix = [".rst", ".md"]
 # a list of builtin themes.
 #
 html_theme = "pydata_sphinx_theme"
+
+html_theme_options = {
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/etiennedemontalivet/micromed-io",
+            "icon": "fa-brands fa-github",
+            "type": "fontawesome",
+        },
+    ],
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
