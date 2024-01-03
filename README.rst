@@ -1,6 +1,17 @@
 Micromed IO library
 ===================
 
+|Tests|_ |Doc|_ |Codecov|_
+
+.. |Tests| image:: https://github.com/etiennedemontalivet/micromed-io/actions/workflows/tests.yml/badge.svg
+.. _Tests: https://github.com/etiennedemontalivet/micromed-io/actions/workflows/tests.yml
+
+.. |Doc| image:: https://github.com/etiennedemontalivet/micromed-io/actions/workflows/documentation.yml/badge.svg
+.. _Doc: https://github.com/etiennedemontalivet/micromed-io/actions/workflows/documentation.yml
+
+.. |Codecov| image:: https://codecov.io/gh/etiennedemontalivet/micromed-io/graph/badge.svg?token=X6UBEUW767
+.. _Codecov: https://codecov.io/gh/etiennedemontalivet/micromed-io
+
 A library to read, emulate, and forward Micromed data in standard formats. See 
 `online doc <https://etiennedemontalivet.github.io/micromed-io/>`__.
 
