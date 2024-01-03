@@ -15,12 +15,14 @@ jobs:
       CONDA_ENV: 'environment.yml'
     strategy:
       matrix:
-        python-version: ["3.9", "3.11"]
-      os: [ubuntu-latest, windows-latest]
+        python-version: ["3.9"]
+        os: [ubuntu-latest, windows-latest]
 
-    name: tests_python-${{ matrix.python-version }}
+    name: tests_python-${{ matrix.python-version }}-${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          lfs: true
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: 'mmio'
@@ -28,13 +30,14 @@ jobs:
           environment-file: ${{ env.CONDA_ENV }}
       - name: Install extra dependencies
         shell: bash -el {0}
-        run: poetry install --with dev
+        run: poetry install --with dev && conda install -c conda-forge liblsl
       - name: Test with pytest
         shell: bash -el {0}
         run: |
           pytest micromed_io --cov=micromed_io --cov-report=xml --doctest-modules tests/
-      - name: Upload coverage stats
+      - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        
 
