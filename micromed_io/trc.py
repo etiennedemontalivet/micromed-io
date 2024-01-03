@@ -1,10 +1,10 @@
 """Micromed IO module
 """
 
-from typing import List
-from typing import Union
-from pathlib import Path
 import logging
+from pathlib import Path
+from typing import List, Union
+
 import numpy as np
 
 from micromed_io.in_out import MicromedIO
@@ -64,7 +64,12 @@ class MicromedTRC(MicromedIO):
         return self.micromed_header.markers
 
     def get_data(
-        self, picks: List = None, keep_raw: bool = False, use_volt: bool = False
+        self,
+        picks: List = None,
+        start: int = 0,
+        stop: int = None,
+        keep_raw: bool = False,
+        use_volt: bool = False,
     ):
         """Get channels data in format (n_channels, n_sample)
 
@@ -73,14 +78,34 @@ class MicromedTRC(MicromedIO):
         picks : List, optional
             A list of channel to extract. If None, all channels are extracted.
             The default is None.
+        start : int, optional
+            The starting index of the data to extract. The default is 0.
+        stop : int, optional
+            The ending index of the data to extract. If None, extract until the end of the data.
+            The default is None.
         keep_raw : bool, optional
             If True, the data won't be converted to voltage. The default is False.
         use_volt : bool, optional
             If True, the data is scaled to Volts. If False, whatever unit is used by Micromed.
-            Note that you may loose resolution by doing that. The default is False.
+            Note that you may lose resolution by doing that. The default is False.
+
         """
+        if start > 0:
+            start_address = int(
+                start
+                * self.micromed_header.nb_of_bytes
+                * self.micromed_header.nb_of_channels
+            )
+        packet_size = None
+        if stop is not None:
+            packet_size = int(
+                (stop - start)
+                * self.micromed_header.nb_of_bytes
+                * self.micromed_header.nb_of_channels
+            )
+
         with open(self.filename, "rb") as f:
-            f.seek(self._get_data_address())
-            b_data = f.read()
+            f.seek(self._get_data_address() + start_address)
+            b_data = f.read(packet_size)
             self.decode_data_eeg_packet(b_data, picks, keep_raw, use_volt)
         return self.current_data_eeg
