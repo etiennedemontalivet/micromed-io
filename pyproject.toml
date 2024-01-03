@@ -11,8 +11,6 @@ mne = "^1.0.0"
 click = "^8.1.7"
 pylsl = "^1.16.2"
 
-[tool.poetry.dev-dependencies]
-pytest = "^5.2"
 
 [tool.poetry.scripts]
 mmio_emulate_trc = "micromed_io.scripts.emulate_online_trc:run"
@@ -25,6 +23,8 @@ sphinx-copybutton = "^0.5.2"
 numpydoc = "^1.6.0"
 pydata-sphinx-theme = "^0.14.4"
 sphinx-gallery = "^0.15.0"
+pytest = "^7.4.4"
+pytest-cov = "^4.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

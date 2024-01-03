@@ -1,0 +1,40 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }}
+    env:
+      CONDA_ENV: 'environment.yml'
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.11"]
+      os: [ubuntu-latest, windows-latest]
+
+    name: tests_python-${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: 'mmio'
+          python-version: ${{ matrix.python-version }}
+          environment-file: ${{ env.CONDA_ENV }}
+      - name: Install extra dependencies
+        shell: bash -el {0}
+        run: poetry install --with dev
+      - name: Test with pytest
+        shell: bash -el {0}
+        run: |
+          pytest micromed_io --cov=micromed_io --cov-report=xml --doctest-modules tests/
+      - name: Upload coverage stats
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+

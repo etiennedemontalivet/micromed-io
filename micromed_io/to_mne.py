@@ -53,7 +53,7 @@ def create_mne_from_micromed_recording(
     Examples
     --------
     >>> from micromed_io.to_mne import create_mne_from_micromed_recording
-    >>> mne_raw = create_mne_from_micromed_recording("path/to/file.TRC", start_time=10.0, stop_time=20.0)
+    >>> mne_raw = create_mne_from_micromed_recording("path/to/file.TRC", start_time=10.0, stop_time=20.0) #doctest: +SKIP
 
     """
     micromed_trc = MicromedTRC(recording_file)
