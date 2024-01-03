@@ -1,0 +1,6 @@
+micromed\_io.to\_mne.create\_mne\_from\_micromed\_recording
+===========================================================
+
+.. currentmodule:: micromed_io.to_mne
+
+.. autofunction:: create_mne_from_micromed_recording

@@ -1,0 +1,25 @@
+micromed\_io.in\_out.MicromedIO
+===============================
+
+.. currentmodule:: micromed_io.in_out
+
+.. autoclass:: MicromedIO
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~MicromedIO.decode_data_eeg_packet
+      ~MicromedIO.decode_data_header_packet
+   
+   
+
+   
+   
+   

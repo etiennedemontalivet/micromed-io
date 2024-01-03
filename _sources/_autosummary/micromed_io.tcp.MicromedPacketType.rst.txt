@@ -1,0 +1,26 @@
+micromed\_io.tcp.MicromedPacketType
+===================================
+
+.. currentmodule:: micromed_io.tcp
+
+.. autoclass:: MicromedPacketType
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Attributes detail
+
+   .. autosummary::
+   
+      ~MicromedPacketType.HEADER
+      ~MicromedPacketType.EEG_DATA
+      ~MicromedPacketType.NOTE
+      ~MicromedPacketType.MARKER
+   
+   
