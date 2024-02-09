@@ -129,7 +129,7 @@ class MicromedIO:
         for note_sample, note_val in self._header["notes"]:
             if note_sample == 0:
                 break
-            notes_dict[note_sample] = note_val.decode("utf-8")
+            notes_dict[note_sample] = note_val.decode(ENCODING)
         self.micromed_header.notes = notes_dict
 
         # Handle notes
