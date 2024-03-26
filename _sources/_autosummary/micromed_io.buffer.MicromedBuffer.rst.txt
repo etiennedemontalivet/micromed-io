@@ -1,0 +1,27 @@
+micromed\_io.buffer.MicromedBuffer
+==================================
+
+.. currentmodule:: micromed_io.buffer
+
+.. autoclass:: MicromedBuffer
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~MicromedBuffer.decode_data_eeg_packet
+      ~MicromedBuffer.decode_data_header_packet
+      ~MicromedBuffer.init_buffer
+      ~MicromedBuffer.update_epoch_buffer
+   
+   
+
+   
+   
+   
