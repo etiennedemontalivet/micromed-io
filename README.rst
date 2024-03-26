@@ -190,3 +190,20 @@ Download the repo and:
 
 
 Please feel free to reach me if you want to contribute.
+
+Sponsor
+-------
+
+This work has been supported by the Wyss Center.
+
+.. image:: https://raw.githubusercontent.com/etiennedemontalivet/micromed-io/master/docs/source/data/wyss-center-full.png
+  :alt: Wyss Center logo
+  :align: center
+  :class: only-light
+  :width: 50%
+
+.. image:: https://raw.githubusercontent.com/etiennedemontalivet/micromed-io/master/docs/source/data/wyss-center-full-inverse.png
+  :alt: Wyss Center inverse logo
+  :align: center
+  :class: only-dark
+  :width: 50%
