@@ -1,4 +1,5 @@
 """Micromed IO module"""
+
 #
 # the header parser has been updated to read almost all data thanks to wonambi library:
 # https://wonambi-python.github.io/api/wonambi.ioeeg.micromed.html
@@ -65,7 +66,6 @@ class MicromedIO:
         self.current_data_eeg = None
         self.picks = picks
         self.picks_id = None
-        self.epoch_buffer = None
         self.mkr_index = None  # index of MKR+-MKR- channel in micromed_header.ch_names
         self.current_channels = None
         self.notes = {}
@@ -95,7 +95,7 @@ class MicromedIO:
             f"{d['chan_name']}-{d['ground']}" for d in self._header["chans"]
         ]
 
-        # construct the indexes of channels to pick in epoch buffer
+        # construct the indexes of channels to pick
         if self.picks is None:
             self.picks_id = np.arange(len(self.micromed_header.stored_channels))
         else:

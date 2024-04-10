@@ -135,31 +135,6 @@ repo <https://github.com/etiennedemontalivet/micromed-io>`__ in
    emulate/read TCP script, launch the reader first that acts as server,
    then the emulator.
 
-Read online Micromed TCP in a sliding window buffer
----------------------------------------------------
-
-If you plan to use the Micromed data as input of a decoder, you probably
-want epochs of format ``(n_channels, n_samples)``. Then the
-``MicromedBuffer`` class is for you. The script ``tcp_to_epoch.py``
-shows you how to use it (see the ``PROCESS HERE`` comment). It uses a
-**buffer** that mimics the **sliding window** and triggers each time it
-is filled.
-
-.. code:: python
-
-   from micromed_io.buffer import MicromedBuffer
-   micromed_buffer = MicromedBuffer(epoch_duration=5, epoch_overlap=2.5)
-
-To run the example, you can download and run the ``tcp_to_epoch.py`` script in ``extern/`` 
-folder:
-
-.. code:: bash
-
-   $ python tcp_to_epoch.py --epoch-size=5 --overlap=2.5
-
-.. note::
-   
-   Try it with **emulated data** from a TRC file (cf `emulate TRC`_)
 
 Rename TRC files with recording datetime
 ----------------------------------------
