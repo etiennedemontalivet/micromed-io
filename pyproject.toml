@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "micromed-io"
-version = "0.4.3"
+version = "0.4.4"
 description = "A library to read, emulate, and forward Micromed data in standard formats"
 authors = ["Etienne de MONTALIVET <etienne.demontalivet@protonmail.com>"]
 readme = "README.rst"
