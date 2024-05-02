@@ -232,7 +232,7 @@ class MicromedIO:
                         ratio = 0
                         if unit == "nV":
                             ratio = 1e-9
-                        elif unit == "µV":
+                        elif unit == "μV":
                             ratio = 1e-6
                         elif unit == "mV":
                             ratio = 1e-3
