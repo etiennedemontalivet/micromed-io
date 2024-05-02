@@ -1,6 +1,7 @@
 import datetime
 import os
 from pathlib import Path
+import numpy as np
 
 from micromed_io.trc import MicromedTRC
 
@@ -221,3 +222,19 @@ def test_micromed_trc():
     assert data.shape == (14, 2048)
     data = micromed_trc.get_data(picks=["x1-G2", "x2-G2"])
     assert data.shape == (2, 349632)
+
+    # test the units
+    ch0 = micromed_trc.micromed_header.ch_names[0]
+    unit0 = micromed_trc.micromed_header.elec_refs[0].units  # string
+    if unit0 == "nV":
+        unit0 = 1e-9
+    elif unit0 == "μV":
+        unit0 = 1e-6
+    elif unit0 == "mV":
+        unit0 = 1e-3
+    elif unit0 == "V":
+        unit0 = 1
+    assert np.isclose(
+        micromed_trc.get_data(picks=[ch0], stop=1000, use_volt=True),
+        micromed_trc.get_data(picks=[ch0], stop=1000) * unit0,
+    ).all()
