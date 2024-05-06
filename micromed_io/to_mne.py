@@ -1,4 +1,5 @@
 """Micromed module to load and transform data from Micromed recordings to mne format"""
+
 from datetime import timedelta, timezone
 from pathlib import Path
 from typing import List, Union
@@ -43,12 +44,14 @@ def create_mne_from_micromed_recording(
 
     Notes
     -----
+    Data is returned in volts.
+
     Some info are hardcoded, such as:
 
     - `device_info` type: Micromed
     - `device_info` site: Unknown
 
-    Update the code if needed.
+    Please update the code if needed.
 
     Examples
     --------
@@ -64,7 +67,7 @@ def create_mne_from_micromed_recording(
     start_sample = int(start_time * sfreq)
     stop_sample = int(stop_time * sfreq) if stop_time is not None else None
     sub_eegs = micromed_trc.get_data(
-        picks=sub_channels, start=start_sample, stop=stop_sample
+        picks=sub_channels, start=start_sample, stop=stop_sample, use_volt=True
     )
 
     info = mne.create_info(
