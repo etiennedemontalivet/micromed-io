@@ -12,7 +12,7 @@ from typing import List
 
 import numpy as np
 from numpy import dtype
-
+import warnings
 from micromed_io.header import ElectrodeReferences, MicromedHeader
 
 N_ZONES = 15
@@ -239,9 +239,11 @@ class MicromedIO:
                         elif unit == "V":
                             ratio = 1
                         else:
-                            raise ValueError(
-                                f"Cannot convert data to Volts. unit is inappropriate: {unit}."
+                            warnings.warn(
+                                f"Cannot convert data to Volts for channel "
+                                + f"{self.micromed_header.ch_names[i]}. unit is inappropriate: {unit}. Using raw data."
                             )
+                            ratio = 1
                         factor *= ratio
                     reshaped_data.append(
                         np.multiply(
