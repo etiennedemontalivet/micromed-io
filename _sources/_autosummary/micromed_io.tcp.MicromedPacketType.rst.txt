@@ -1,0 +1,41 @@
+micromed\_io.tcp.MicromedPacketType
+===================================
+
+.. currentmodule:: micromed_io.tcp
+
+.. autoclass:: MicromedPacketType
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~MicromedPacketType.conjugate
+      ~MicromedPacketType.bit_length
+      ~MicromedPacketType.to_bytes
+      ~MicromedPacketType.from_bytes
+      ~MicromedPacketType.as_integer_ratio
+   
+   
+
+   
+   
+   .. rubric:: Attributes detail
+
+   .. autosummary::
+   
+      ~MicromedPacketType.real
+      ~MicromedPacketType.imag
+      ~MicromedPacketType.numerator
+      ~MicromedPacketType.denominator
+      ~MicromedPacketType.HEADER
+      ~MicromedPacketType.EEG_DATA
+      ~MicromedPacketType.NOTE
+      ~MicromedPacketType.MARKER
+   
+   

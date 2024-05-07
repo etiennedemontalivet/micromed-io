@@ -1,0 +1,6 @@
+micromed\_io.tcp.encode\_marker\_packet
+=======================================
+
+.. currentmodule:: micromed_io.tcp
+
+.. autofunction:: encode_marker_packet

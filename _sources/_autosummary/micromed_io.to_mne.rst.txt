@@ -1,0 +1,31 @@
+micromed\_io.to\_mne
+====================
+
+.. automodule:: micromed_io.to_mne
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :nosignatures:
+   
+      create_mne_from_micromed_recording
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

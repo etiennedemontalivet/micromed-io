@@ -1,0 +1,32 @@
+micromed\_io.trc
+================
+
+.. automodule:: micromed_io.trc
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class-template.rst
+      :nosignatures:
+   
+      MicromedTRC
+   
+   
+
+   
+   
+   
+
+
+

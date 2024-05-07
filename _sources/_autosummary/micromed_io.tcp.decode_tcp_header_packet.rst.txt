@@ -1,0 +1,6 @@
+micromed\_io.tcp.decode\_tcp\_header\_packet
+============================================
+
+.. currentmodule:: micromed_io.tcp
+
+.. autofunction:: decode_tcp_header_packet

@@ -1,0 +1,6 @@
+micromed\_io.tcp.encode\_note\_packet
+=====================================
+
+.. currentmodule:: micromed_io.tcp
+
+.. autofunction:: encode_note_packet

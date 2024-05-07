@@ -1,0 +1,43 @@
+micromed\_io.header.MicromedHeader
+==================================
+
+.. currentmodule:: micromed_io.header
+
+.. autoclass:: MicromedHeader
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+   
+   
+
+   
+   
+   .. rubric:: Attributes detail
+
+   .. autosummary::
+   
+      ~MicromedHeader.acq_unit
+      ~MicromedHeader.ch_names
+      ~MicromedHeader.data_address
+      ~MicromedHeader.elec_refs
+      ~MicromedHeader.header_type
+      ~MicromedHeader.markers
+      ~MicromedHeader.min_sampling_rate
+      ~MicromedHeader.name
+      ~MicromedHeader.nb_of_bytes
+      ~MicromedHeader.nb_of_channels
+      ~MicromedHeader.notes
+      ~MicromedHeader.order
+      ~MicromedHeader.recording_date
+      ~MicromedHeader.stored_channels
+      ~MicromedHeader.surname
+   
+   

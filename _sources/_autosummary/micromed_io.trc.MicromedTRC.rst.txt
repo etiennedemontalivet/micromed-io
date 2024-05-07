@@ -1,0 +1,30 @@
+micromed\_io.trc.MicromedTRC
+============================
+
+.. currentmodule:: micromed_io.trc
+
+.. autoclass:: MicromedTRC
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~MicromedTRC.decode_data_eeg_packet
+      ~MicromedTRC.decode_data_header_packet
+      ~MicromedTRC.get_data
+      ~MicromedTRC.get_header
+      ~MicromedTRC.get_markers
+      ~MicromedTRC.get_notes
+      ~MicromedTRC.get_sfreq
+   
+   
+
+   
+   
+   

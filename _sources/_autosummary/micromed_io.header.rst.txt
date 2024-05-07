@@ -1,0 +1,33 @@
+micromed\_io.header
+===================
+
+.. automodule:: micromed_io.header
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class-template.rst
+      :nosignatures:
+   
+      ElectrodeReferences
+      MicromedHeader
+   
+   
+
+   
+   
+   
+
+
+
